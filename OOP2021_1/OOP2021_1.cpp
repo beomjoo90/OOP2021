@@ -6,29 +6,30 @@
 #include <cstring> // string.h
 #include <cstdlib> // stdlib.h
 #include <string> // c++ string class
+#include <Windows.h>
 
-
+using namespace std;
 
 int main()
 {
-	char data[100] { "hello world" };
+	int bulletPos = 0;
+	const int screenSize = 80;
+	char screen[screenSize + 1];
 
-	printf("%s\n", data);
+	while (true) {
 
-	strncpy(data, "world", 5);
-	strncat(data, " You should win.", 3);
-	printf("%s\n", data);
+		memset(screen, ' ', screenSize);
 
-	if (strncmp(&data[6], "world", 5) == 0) {
-		printf("matched\n");
-	} else 
-		printf("unmatched\n");
-	
+		screen[bulletPos] = '-';
+		screen[screenSize] = '\0';
+		printf("%s\r", screen);
 
-	
+		bulletPos++;
+		if (bulletPos >= screenSize) break;
 
-	
-
+		Sleep(100);
+	}
+	printf("\nGame Over\n");
 	
 	return 0;
 }

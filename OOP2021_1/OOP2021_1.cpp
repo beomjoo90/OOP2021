@@ -9,14 +9,7 @@ int main()
 
 	strcpy(data, "hello beomjoo seo");
 
-	// 한글을 어떻게
-
 	printf("%s\n", data);
-
-	strcat(data, ", tomorrow");
-
-	printf("%s\n", data);
-
 
 	return 0;
 }

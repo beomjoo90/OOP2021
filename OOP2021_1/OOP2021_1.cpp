@@ -5,7 +5,8 @@ int main()
 {
 	char data[100] { "hello world" };
 
-	printf("%s\n", data);
+	// 새로운 시작 502반 commit 연습
+
 
 	strcpy(data, "hello beomjoo seo");
 

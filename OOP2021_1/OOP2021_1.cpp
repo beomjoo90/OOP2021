@@ -3,6 +3,7 @@
 #endif
 
 #include <iostream>
+#include <conio.h> // console io
 #include <cstring> // string.h
 #include <cstdlib> // stdlib.h
 #include <string> // c++ string class
@@ -11,21 +12,32 @@
 using namespace std;
 
 int main()
-{
+{	
 	int bulletPos = 0;
 	const int screenSize = 80;
-	char screen[screenSize + 1];
+	char screen[screenSize + 1]; // 0 .. 80 : 81
+	char playerFace[20]{ "(^_^)" };
+	int playerPos = 10;
 
+	int key;
+
+
+	// game loop
 	while (true) {
 
-		memset(screen, ' ', screenSize);
+		if (bulletPos < 0 || bulletPos >= screenSize) break;
 
-		screen[bulletPos] = '-';
-		screen[screenSize] = '\0';
+		memset(screen, ' ', screenSize); // clear screen
+
+		strncpy(&screen[playerPos], playerFace, strlen(playerFace) ) ; // draw player
+
+		if (_kbhit() ) {
+			key = _getch();
+			printf("\nkey %c %d\n", key, key);
+		}
+
+		screen[screenSize] = '\0';  // render screen
 		printf("%s\r", screen);
-
-		bulletPos++;
-		if (bulletPos >= screenSize) break;
 
 		Sleep(100);
 	}

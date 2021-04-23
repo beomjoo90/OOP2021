@@ -13,13 +13,110 @@
 
 using namespace std;
 
+const int directionToLeft = 0;
+const int directionToRight = 1;
+const int screenSize = 80;
+
+void clear(char* screen)
+{
+	memset(screen, ' ', screenSize);		 
+}
+void draw(char* screen, int pos, const char* face)
+{
+	strncpy(&screen[pos], face, strlen(face));
+}
+void draw(char* screen, int pos, char face)
+{
+	if (pos < 0 || pos >= screenSize) return;
+	screen[pos] = face;
+}
+void render(char* screen)
+{
+	screen[screenSize] = '\0';  // render screen
+	printf("%s\r", screen);
+}
+
+void moveLeft(int* position)
+{
+	--(*position);
+}
+void moveRight(int* position)
+{
+	++(*position);
+}
+void update(char* face, int* nRemaining, const char* target)
+{
+	if (*nRemaining > 0) {
+		--(*nRemaining);
+		if ( (*nRemaining) == 0) { // 1초가 지났을 때
+			strcpy(face, target);
+		}
+	}
+}
+
+void initBullet(bool* isReady, int* bulletPosition, int* direction)
+{
+	*isReady = true;
+	*bulletPosition = 0;
+	*direction = directionToRight;
+}
+void initBullets(bool* areReady, int* bulletPositions, int* directions, const int nBullets)
+{	
+	for (int i = 0; i < nBullets; i++)
+	{
+		initBullet(&areReady[i], &bulletPositions[i], &directions[i]);
+	}
+}
+void updateBullets(bool* areReady, int* bulletPositions, int* directions, const int nBullets,
+		char* playerFace, int* nPlayerRemaining,
+		char* enemyFace, int enemyPos, int* nEnemyRemaining	) {
+	// update all bullets
+	for (int i = 0; i < nBullets; i++)
+	{
+		if (areReady[i] == true) continue;
+
+		// isReady[i] == false
+		directions[i] == directionToRight ? bulletPositions[i]++ : bulletPositions[i]--; // move bullet automatically
+		if ((directions[i] == directionToLeft && enemyPos + strlen(enemyFace) - 1 == bulletPositions[i])
+			|| (directions[i] == directionToRight && enemyPos == bulletPositions[i])) { // 적이 총알을 맞았을 때
+			strcpy(enemyFace, "(T_T)");
+			*nEnemyRemaining = 10;
+			strcpy(playerFace, "\\(^_^)/");
+			*nPlayerRemaining = 30;
+			areReady[i] = true;
+		}
+
+		if (bulletPositions[i] < 0 || bulletPositions[i] >= screenSize) {
+			areReady[i] = true;
+		}
+	}
+}
+int findUnusedBullet(bool* areReady, const int nBullets)
+{
+	for (int i = 0; i < nBullets; i++) 
+	{
+		if (areReady[i] == true) return i;
+	}
+	
+	return -1;
+}
+void fire(bool* areReady, int* bulletPositions, int* directions, const int nBullets,
+	int playerPos, const char* playerFace,
+	int enemyPos )
+{
+	int i = findUnusedBullet(areReady, nBullets);
+	if (i == -1) return;
+
+	areReady[i] = false; // 사용중으로 표시
+	if (playerPos < enemyPos) directions[i] = directionToRight;
+	else directions[i] = directionToLeft;
+
+	if (directions[i] == directionToRight) bulletPositions[i] = playerPos + strlen(playerFace) - 1;
+	else bulletPositions[i] = playerPos;
+}
+
 int main()
 {	
-	const int directionToLeft = 0;
-	const int directionToRight = 1;
-
-	const int screenSize = 80;
-	const int nBullets = 80;
 	char screen[screenSize + 1]; // 0 .. 80 : 81
 
 	char playerFace[20]{ "(-_-)" };
@@ -30,124 +127,62 @@ int main()
 	int enemyPos = 10;
 	int nEnemyRemaining = 0;
 
-	bool isReady[nBullets];
-	int bulletPos[nBullets];
-	int direction[nBullets];
+	const int nBullets = screenSize;
+	bool areReady[nBullets];
+	int bulletPositions[nBullets];
+	int directions[nBullets];
 
 	int major;
 	int minor;
 
-	// initialize bullets
-	for (int i=0; i < nBullets; i++)
-	{
-		isReady[i] = true;
-		bulletPos[i] = 0;
-		direction[i] = directionToRight;
-	}
+	initBullets(areReady, bulletPositions, directions, nBullets);
 
 	// game loop
 	while (true) {
-		memset(screen, ' ', screenSize); // clear screen			   		
+		clear(screen);		  		
 
-		// handle inputs
 		if (_kbhit() ) {
-			int i = 0;
-
 			major = _getch();
 			switch (major) {
 				
 			case ' ':
-				// 총알들중 현재 사용중이지 않은 것을 찾아냄.
-				for (; i < nBullets; i++)
-				{
-					if (isReady[i] == true) break;
-				}
-				// i == nBullets (not found) or i < nBullets (found)
-				if (i == nBullets) break;
-
-				// i < nBullets 즉 사용허지 않은 총알이 있습니다.
-				isReady[i] = false; // make the ready bullet in used
-				
-				if (playerPos < enemyPos) direction[i] = directionToRight;
-				else direction[i] = directionToLeft;
-
-				if (direction[i] == directionToRight) bulletPos[i] = playerPos + strlen(playerFace)-1;
-				else bulletPos[i] = playerPos;
+				fire(areReady, bulletPositions, directions, nBullets, playerPos, playerFace, enemyPos);
 				break;
 			case 224: // arrow key, function key pressed
 				minor = _getch();
 				switch (minor) {
 				case 75: // left
-					playerPos--;
+					moveLeft( &playerPos );					
 					break;
 				case 77: // right
-					playerPos++;
+					moveRight( &playerPos );
 					break;
 				case 72: // up
-					enemyPos--;
+					moveLeft(&enemyPos);
 					break;
 				case 80: // down
-					enemyPos++;
+					moveRight( &enemyPos );
 					break;
 				}
 				break;
 			}
-			///
 		}
 
-		// update
-		// update player
-		if (nPlayerRemaining > 0) {
-			nPlayerRemaining--;
-			if (nPlayerRemaining == 0) { // 1초가 지났을 때
-				strcpy(playerFace, "(-_-)");
-			}
-		}
+		update(playerFace, &nPlayerRemaining, "(-_-)");
+		update(enemyFace, &nEnemyRemaining, "(`_#)");
+		updateBullets(areReady, bulletPositions, directions, nBullets,
+			playerFace, &nPlayerRemaining,
+			enemyFace, enemyPos, &nEnemyRemaining);
 
-		// update enemy
-		if (nEnemyRemaining > 0) {
-			nEnemyRemaining--;
-			if (nEnemyRemaining == 0) { // 1초가 지났을 때
-				strcpy(enemyFace, "(`_#)");
-			}
-		}
-
-		// update all bullets
+		draw(screen, playerPos, playerFace);
+		draw(screen, enemyPos, enemyFace);
 		for (int i = 0; i < nBullets; i++)
 		{
-			if (isReady[i] == true) continue;
-
-			// isReady[i] == false
-			direction[i] == directionToRight ? bulletPos[i]++ : bulletPos[i]--; // move bullet automatically
-			if ((direction[i] == directionToLeft && enemyPos + strlen(enemyFace) - 1 == bulletPos[i])
-				|| (direction[i] == directionToRight && enemyPos == bulletPos[i])) { // 적이 총알을 맞았을 때
-				strcpy(enemyFace, "(T_T)");
-				nEnemyRemaining = 10;
-				strcpy(playerFace, "\\(^_^)/");
-				nPlayerRemaining = 30;
-				isReady[i] = true;
-			}
-
-			if (bulletPos[i] < 0 || bulletPos[i] >= screenSize) {
-				isReady[i] = true;
-			}
+			if (areReady[i] == true) continue;
+			draw(screen, bulletPositions[i], '-');
 		}
-
-		// draw game objects
-		strncpy(&screen[playerPos], playerFace, strlen(playerFace)); // draw player
-		strncpy(&screen[enemyPos], enemyFace, strlen(enemyFace)); // draw enemy
-		// draw all bullets in use
-		for (int i = 0; i < nBullets; i++)
-		{
-			if (isReady[i] == true) continue;
-			// isReady[i] == false
-			if (bulletPos[i] >= 0 && bulletPos[i] < screenSize) {
-				screen[bulletPos[i]] = '-'; // draw bullet
-			}
-		}
-
-		screen[screenSize] = '\0';  // render screen
-		printf("%s\r", screen);
+		
+		render(screen);
 
 		Sleep(100);
 	}

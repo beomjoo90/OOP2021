@@ -11,26 +11,34 @@
 
 // https://github.com/beomjoo90/OOP2021 , branch: 1학기
 
-using namespace std;
-
 const int directionToLeft = 0;
 const int directionToRight = 1;
 const int screenSize = 80;
 
-void clear(char* screen)
+struct Screen {
+	char canvas[screenSize + 1];
+};
+
+struct Player {
+	char	face[20];
+	int		pos;
+	int		nRemaining;
+};
+
+void clear(Screen* screen)
 {
 	memset(screen, ' ', screenSize);		 
 }
-void draw(char* screen, int pos, const char* face)
+void draw(Screen* screen, int pos, const char* face)
 {
 	strncpy(&screen[pos], face, strlen(face));
 }
-void draw(char* screen, int pos, char face)
+void draw(Screen* screen, int pos, char face)
 {
 	if (pos < 0 || pos >= screenSize) return;
 	screen[pos] = face;
 }
-void render(char* screen)
+void render(Screen* screen)
 {
 	screen[screenSize] = '\0';  // render screen
 	printf("%s\r", screen);
@@ -117,7 +125,7 @@ void fire(bool* areReady, int* bulletPositions, int* directions, const int nBull
 
 int main()
 {	
-	char screen[screenSize + 1]; // 0 .. 80 : 81
+	Screen screen;	
 
 	char playerFace[20]{ "(-_-)" };
 	int playerPos = 50;

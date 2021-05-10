@@ -59,68 +59,70 @@ struct Screen {
 		size = 0;
 	}
 };
-struct Player {
+
+
+struct GameObject
+{
 	char	face[20];
 	int		pos;
-	int		nRemaining;
+	int		direction;
 
-	Player(const char* face, int pos)
+	GameObject(const char* face, int pos, int direction) 
+		: pos(pos), direction(direction) // member initialization list
 	{
-		strcpy(this->face, face);
-		this->pos = pos;
-		this->nRemaining = 0;
+		setFace(face);
 	}
-	void fire(Bullets* bullets, Enemy* enemy);
+
 	void move(int direction)
 	{
-		(direction == directionToLeft) ? --pos : ++pos;
+		direction == directionToRight ? pos++: pos--;
 	}
 	void draw(Screen* screen)
 	{
 		screen->draw(pos, face);
 	}
+	int getPos() { return pos; }
+	int getDirection() { return direction;  }
+	const char* getFace() { return face;  }
+	void setFace(const char* face) { strcpy(this->face, face); }
+
+	~GameObject() {}
+};
+
+
+
+
+struct Player  : public GameObject {
+	int		nRemaining;
+
+	
+	Player(const char* face, int pos)
+		: GameObject(face, pos, directionToRight), nRemaining(0)
+	{}
+
+	void fire(Bullets* bullets, Enemy* enemy);
 	void update(const char* face)
 	{
 		if (nRemaining == 0) return;
 		--nRemaining;
-		if (nRemaining == 0) strcpy(this->face, face);
+		if (nRemaining == 0) setFace(face);
 	}
 	void onEnemyHit()
 	{
-		strcpy(face, "\\(^_^)/");
+		setFace("\\(^_^)/");
 		nRemaining = 30;
 	}
-	int  getPos()
-	{
-		return pos;
-	}
-	const char* getFace()
-	{
-		return face;
-	}
+
+	
 };
-struct Enemy {
-	char	face[20];
-	int		pos;
+struct Enemy : public GameObject {
 	int		nRemaining;
 	int     nMovementInterval;
 	float   fPos;
 
 	Enemy(const char* face, int pos)
-	{
-		strcpy(this->face, face);
-		this->pos = pos;
-		nRemaining = 0;
-		fPos = pos;
-	}
-	void move(int direction)
-	{
-		direction == directionToLeft ? --pos : ++pos;
-	}
-	void draw(Screen* screen)
-	{
-		screen->draw(pos, face);
-	}
+		: object(face, pos, directionToLeft), nRemaining(0), nMovementInterval(1), fPos(pos)
+	{}
 	void update(const char* face)
 	{
 		int movement = rand() % 3 - 1;
@@ -137,18 +139,16 @@ struct Enemy {
 		strcpy(face, "(T_T)");
 		nRemaining = 10;
 	}
-	int  getPos()
-	{
-		return pos;
-	}
 };
 struct Bullet {
+	char    face[20];
 	bool	isReady;
 	int		pos;
 	int		direction;
 
 	Bullet()
 	{
+		strcpy(this->face, "-");
 		isReady = true;
 		pos = 0;
 		direction = directionToLeft;
@@ -176,7 +176,7 @@ struct Bullet {
 	void draw(Screen* screen)
 	{
 		if (isReady == true) return;
-		screen->draw(pos, '-');
+		screen->draw(pos, face);
 	}
 	void reuse()
 	{

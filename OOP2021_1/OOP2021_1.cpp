@@ -68,7 +68,7 @@ struct GameObject
 	int		direction;
 
 	GameObject(const char* face, int pos, int direction) 
-		: pos(pos), direction(direction) // member initialization list
+		: pos(pos), direction(direction)
 	{
 		setFace(face);
 	}
@@ -77,12 +77,21 @@ struct GameObject
 	{
 		direction == directionToRight ? pos++: pos--;
 	}
+	void move()
+	{
+		(direction == directionToLeft) ? --pos : ++pos;
+	}
 	void draw(Screen* screen)
 	{
 		screen->draw(pos, face);
 	}
-	int getPos() { return pos; }
+
+	int getPos() { return pos; } // getter function
+	void setPos(int pos) { this->pos = pos; } // setter function
+
 	int getDirection() { return direction;  }
+	void setDirection(int direction) { this->direction = direction; }
+
 	const char* getFace() { return face;  }
 	void setFace(const char* face) { strcpy(this->face, face); }
 
@@ -90,16 +99,29 @@ struct GameObject
 };
 
 
+/*
+  C (재사용하기 위해서 a part of ....)
+  --> C++ (상속: 재사용하기 위한 관점 ---> 다중 상속)
+  --> 상속: is a 관계 표현하는 것이다!!! 단일 상속
+  --> java (90중반 SUN james gosling: Object-oriented Language) -> oracle (java)
 
+      struct Player extends GameObject { ... }
+	    ---> google (android -> mobile platform) -----------------------> kotlin
+      --> MS C# : struct Player : GameObject { ... }
 
-struct Player  : public GameObject {
+   C++: class ScannerPrinter : public Printer, public IScanner
+
+   java: class ScannerPrinter extends Printer, implements IScanner
+   C#: class ScannerPrinter : Printer, IScanner
+*/
+
+struct Player : public GameObject {
 	int		nRemaining;
-
 	
 	Player(const char* face, int pos)
 		: GameObject(face, pos, directionToRight), nRemaining(0)
 	{}
-
+		
 	void fire(Bullets* bullets, Enemy* enemy);
 	void update(const char* face)
 	{
@@ -121,38 +143,30 @@ struct Enemy : public GameObject {
 	float   fPos;
 
 	Enemy(const char* face, int pos)
-		: object(face, pos, directionToLeft), nRemaining(0), nMovementInterval(1), fPos(pos)
+		: GameObject(face, pos, directionToLeft), nRemaining(0), nMovementInterval(1), fPos(pos)
 	{}
 	void update(const char* face)
 	{
 		int movement = rand() % 3 - 1;
 		fPos += movement * 0.3f;
-		pos = fPos;
+		setPos((int)fPos);
 
 		if (nRemaining == 0) return;
 		--nRemaining;
-		if (nRemaining == 0) strcpy(this->face, face);
+		if (nRemaining == 0) setFace(face);
 	}
 	bool isHit(Bullet* bullet);
 	void onHit()
 	{
-		strcpy(face, "(T_T)");
+		setFace("(T_T)");
 		nRemaining = 10;
 	}
 };
-struct Bullet {
-	char    face[20];
+struct Bullet : public GameObject {
 	bool	isReady;
-	int		pos;
-	int		direction;
-
-	Bullet()
-	{
-		strcpy(this->face, "-");
-		isReady = true;
-		pos = 0;
-		direction = directionToLeft;
-	}
+	
+	Bullet() : GameObject("-", 0, directionToLeft), isReady{true}
+	{}
 	void setFire(Player* player, Enemy* enemy)
 	{
 		isReady = false; // inUse
@@ -162,22 +176,15 @@ struct Bullet {
 		int player_pos = player->getPos();
 		const char* player_face = player->getFace();
 
-		direction = directionToLeft;
-		if (player_pos < enemy_pos) direction = directionToRight;
+		setDirection(directionToLeft);
+		if (player_pos < enemy_pos) setDirection(directionToRight);
 
 		// bullet position 설정
-		pos = player_pos;
-		if (direction == directionToRight) pos += (strlen(player_face) - 1);
+		setPos(player_pos);
+		if (getDirection() == directionToRight) 
+			setPos( getPos() + (strlen(player_face) - 1));
 	}
-	void move()
-	{
-		(direction == directionToLeft) ? --pos : ++pos;
-	}
-	void draw(Screen* screen)
-	{
-		if (isReady == true) return;
-		screen->draw(pos, face);
-	}
+	
 	void reuse()
 	{
 		isReady = true;
@@ -195,15 +202,7 @@ struct Bullet {
 		}
 		if (!screen->isInRange(this)) reuse();
 	}
-	int  getPos() // function definition
-	{
-		return pos;
-	}
-	int  getDirection()
-	{
-		return direction;
-	}
-
+	
 	bool isAvailable() { return isReady; }
 };
 struct Bullets {
@@ -267,8 +266,8 @@ bool Enemy::isHit(Bullet* bullet)
 	int bullet_direction = bullet->getDirection();
 	int bullet_pos = bullet->getPos();
 	return (
-		(bullet_direction == directionToLeft && pos + strlen(face) - 1 == bullet_pos)
-		|| (bullet_direction == directionToRight && pos == bullet_pos));
+		(bullet_direction == directionToLeft && getPos() + strlen(getFace()) - 1 == bullet_pos)
+		|| (bullet_direction == directionToRight && getPos() == bullet_pos));
 }
 
 int main()

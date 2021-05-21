@@ -20,6 +20,23 @@ struct Enemy;
 struct Bullet;
 struct Bullets;
 
+
+/*
+  C (재사용하기 위해서 a part of ....)
+  --> C++ (상속: 재사용하기 위한 관점 ---> 다중 상속)
+  --> 상속: is a 관계 표현하는 것이다!!! 단일 상속
+  --> java (90중반 SUN james gosling: Object-oriented Language) -> oracle (java)
+
+	  struct Player extends GameObject { ... }
+		---> google (android -> mobile platform) -----------------------> kotlin
+	  --> MS C# : struct Player : GameObject { ... }
+
+   C++: class ScannerPrinter : public Printer, public IScanner
+
+   java: class ScannerPrinter extends Printer, implements IScanner
+   C#: class ScannerPrinter : Printer, IScanner
+*/
+
 struct Screen {
 	int		size;
 	char*	canvas;
@@ -59,8 +76,6 @@ struct Screen {
 		size = 0;
 	}
 };
-
-
 struct GameObject
 {
 	char	face[20];
@@ -97,38 +112,17 @@ struct GameObject
 
 	~GameObject() {}
 };
-
-
-/*
-  C (재사용하기 위해서 a part of ....)
-  --> C++ (상속: 재사용하기 위한 관점 ---> 다중 상속)
-  --> 상속: is a 관계 표현하는 것이다!!! 단일 상속
-  --> java (90중반 SUN james gosling: Object-oriented Language) -> oracle (java)
-
-      struct Player extends GameObject { ... }
-	    ---> google (android -> mobile platform) -----------------------> kotlin
-      --> MS C# : struct Player : GameObject { ... }
-
-   C++: class ScannerPrinter : public Printer, public IScanner
-
-   java: class ScannerPrinter extends Printer, implements IScanner
-   C#: class ScannerPrinter : Printer, IScanner
-*/
-
 struct Player : public GameObject {
 	int		nRemaining;
+	int		nBullets; // 80
+	Bullet*	bullets;
 	
-	Player(const char* face, int pos)
-		: GameObject(face, pos, directionToRight), nRemaining(0)
-	{}
-		
-	void fire(Bullets* bullets, Enemy* enemy);
-	void update(const char* face)
-	{
-		if (nRemaining == 0) return;
-		--nRemaining;
-		if (nRemaining == 0) setFace(face);
-	}
+	Player(const char* face, int pos);
+	~Player();		
+	void fire(Enemy* enemy);
+	Bullet* find_unused_bullet();
+	void draw(Screen* screen);
+	void update(const char* face);
 	void onEnemyHit()
 	{
 		setFace("\\(^_^)/");
@@ -167,6 +161,7 @@ struct Bullet : public GameObject {
 	
 	Bullet() : GameObject("-", 0, directionToLeft), isReady{true}
 	{}
+	~Bullet() {}
 	void setFire(Player* player, Enemy* enemy)
 	{
 		isReady = false; // inUse
@@ -185,9 +180,15 @@ struct Bullet : public GameObject {
 			setPos( getPos() + (strlen(player_face) - 1));
 	}
 	
-	void reuse()
+	void makeReady()
 	{
 		isReady = true;
+	}
+
+	void draw(Screen* screen)
+	{
+		if (isReady == true) return;
+		GameObject::draw(screen);
 	}
 	void update(Player* player, Enemy* enemy, Screen* screen)
 	{
@@ -198,55 +199,14 @@ struct Bullet : public GameObject {
 		{ // 적이 총알을 맞았을 때
 			enemy->onHit();
 			player->onEnemyHit();
-			reuse();
+			makeReady();
 		}
-		if (!screen->isInRange(this)) reuse();
+		if (!screen->isInRange(this)) makeReady();
 	}
 	
 	bool isAvailable() { return isReady; }
 };
-struct Bullets {
-	int		nBullets; // 80
-	Bullet*	bullets;
 
-	Bullets(unsigned int nBullets)
-	{
-		if (nBullets == 0) nBullets = 80;
-		this->nBullets = nBullets;
-		bullets = new Bullet[nBullets];
-	}
-	void draw(Screen* screen)
-	{
-		for (int i = 0; i < nBullets; i++)
-		{
-			Bullet* bullet = &bullets[i];
-			bullet->draw(screen);
-		}
-	}
-	void update(Player* player, Enemy* enemy, Screen* screen)
-	{
-		for (int i = 0; i < nBullets; i++)
-		{
-			Bullet* bullet = &bullets[i];
-			bullet->update(player, enemy, screen);
-		}
-	}
-	Bullet* find_unused_bullet()
-	{
-		for (int i = 0; i < nBullets; i++)
-		{
-			Bullet* bullet = &bullets[i];
-			if (bullet->isAvailable() == true) return bullet;
-		}
-		return nullptr;
-	}
-	~Bullets()
-	{
-		delete[] bullets;
-		bullets = nullptr;
-		nBullets = 0;
-	}
-};
 
 // forward declaration 전방위 선언
 // function prototype declaration 함수 원형 선언
@@ -255,19 +215,57 @@ bool Screen::isInRange(Bullet* bullet)
 	int bullet_pos = bullet->getPos();
 	return bullet_pos >= 0 && bullet_pos < size;
 }
-void Player::fire(Bullets* bullets, Enemy* enemy)
+Player::Player(const char* face, int pos)
+	: GameObject(face, pos, directionToRight), nRemaining(0),
+	nBullets(80), bullets{ new Bullet[nBullets] }
+{}
+Player::~Player()
 {
-	Bullet* bullet = bullets->find_unused_bullet();
+	delete[] bullets;
+	bullets = nullptr;
+	nBullets = 0;
+}
+void Player::fire(Enemy* enemy)
+{
+	Bullet* bullet = find_unused_bullet();
 	if (bullet == nullptr) return;
 	bullet->setFire(this, enemy);
+}
+Bullet* Player::find_unused_bullet()
+{
+	for (int i = 0; i < nBullets; i++)
+	{
+		Bullet* bullet = &bullets[i];
+		if (bullet->isAvailable() == true) return bullet;
+	}
+	return nullptr;
+}
+void Player::draw(Screen* screen)
+{
+	GameObject::draw(screen);
+	for (int i = 0; i < nBullets; i++)
+	{
+		Bullet* bullet = &bullets[i];
+		bullet->draw(screen);
+	}
+}
+void Player::update(const char* face)
+{
+	for (int i = 0; i < nBullets; i++)
+	{
+		Bullet* bullet = &bullets[i];
+		//bullet->update(this, enemy, screen);
+	}
+
+	if (nRemaining == 0) return;
+	--nRemaining;
+	if (nRemaining == 0) setFace(face);
 }
 bool Enemy::isHit(Bullet* bullet)
 {
 	int bullet_direction = bullet->getDirection();
 	int bullet_pos = bullet->getPos();
-	return (
-		(bullet_direction == directionToLeft && getPos() + strlen(getFace()) - 1 == bullet_pos)
-		|| (bullet_direction == directionToRight && getPos() == bullet_pos));
+	return bullet_pos >= getPos() && bullet_pos < getPos() + strlen(getFace()) - 1;
 }
 
 int main()
@@ -276,11 +274,9 @@ int main()
 	int minor;
 
 	Screen  screen(80);
-	Player	player("(-_-)", 50);
-	Enemy	enemy("(`_#)", 10);
-	Bullets bullets(80);
-
-	Enemy   enemy2("(*_*)", 30);
+	Player*	player = new Player( "(-_-)", 50);
+	Enemy * enemy = new Enemy( "(`_#)", 10);
+	Enemy*	enemy2 = new Enemy("(*_*)", 30);
 
 	// game loop
 
@@ -288,15 +284,14 @@ int main()
 	while (isLooping) {
 		screen.clear();		  		
 
-		player.update("(-_-)");
-		enemy.update( "(`_#)");
-		enemy2.update( "(*_*)");
-		bullets.update(&player, &enemy2, &screen);
+		player->update("(-_-)");
+		enemy->update( "(`_#)");
+		enemy2->update( "(*_*)");
 
-		player.draw(&screen);
-		enemy.draw(&screen);	
-		enemy2.draw(&screen);
-		bullets.draw(&screen);
+
+		player->draw(&screen);
+		enemy->draw(&screen);	
+		enemy2->draw(&screen);
 		
 		screen.render();
 		Sleep(100);
@@ -310,28 +305,32 @@ int main()
 			break;
 
 		case ' ':
-			player.fire(&bullets, &enemy2);
+			player->fire(enemy2);
 			break;
 		case 224: // arrow key, function key pressed
 			minor = _getch();
 			switch (minor) {
 			case 75: // left
-				player.move(directionToLeft); // 				
+				player->move(directionToLeft); // 				
 				break;
 			case 77: // right
-				player.move(directionToRight);
+				player->move(directionToRight);
 				break;
 			case 72: // up
-				enemy.move(directionToLeft);
+				enemy->move(directionToLeft);
 				break;
 			case 80: // down
-				enemy.move(directionToRight);
+				enemy->move(directionToRight);
 				break;
 			}
 			break;
 		}
 	}
 	printf("\nGame Over\n");
+
+	delete enemy2;
+	delete enemy;
+	delete player;
 
 	return 0;
 }

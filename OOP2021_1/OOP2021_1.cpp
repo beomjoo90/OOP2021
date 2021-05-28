@@ -81,11 +81,14 @@ struct GameObject
 	int		pos;
 	int		direction;
 	Screen* screen;
+	char	type[10];
+	GameObject** gameObjects;
 
-	GameObject(Screen* screen, const char* face, int pos, int direction) 
-		: pos(pos), direction(direction), screen(screen)
+	GameObject(GameObject** gameObjects, Screen* screen, const char* face, int pos, int direction, const char* type) 
+		: pos(pos), direction(direction), screen(screen), gameObjects(gameObjects)
 	{
 		setFace(face);
+		strcpy(this->type, type);
 	}
 
 	void move(int direction)
@@ -100,6 +103,7 @@ struct GameObject
 	{
 		screen->draw(pos, face);
 	}
+	void update() {}
 
 	int getPos() { return pos; } // getter function
 	void setPos(int pos) { this->pos = pos; } // setter function
@@ -110,18 +114,22 @@ struct GameObject
 	const char* getFace() { return face;  }
 	void setFace(const char* face) { strcpy(this->face, face); }
 
-	~GameObject() {}
+	bool equal(const char* type)
+	{
+		return strcmp(this->type, type) == 0;
+	}
+
+	Screen* getScreen() { return screen; }
+	GameObject** getGameObjects() { return gameObjects; }
 };
 struct Player : public GameObject {
 	int			nRemaining;
-	int			nBullets; // 80
-	Bullet**	bullets;
 	char		originalFace[20];
 	
-	Player(Screen* screen, const char* face, int pos);
-	~Player();		
-	void fire(Enemy* enemy);
+	Player(GameObject** gameObjects, Screen* screen, const char* face, int pos);
+	void fire();
 	Bullet* find_unused_bullet();
+	Enemy* find_closest_enemy();
 	void draw();
 	void update();
 	void onEnemyHit()
@@ -129,8 +137,6 @@ struct Player : public GameObject {
 		setFace("\\(^_^)/");
 		nRemaining = 30;
 	}
-
-	
 };
 struct Enemy : public GameObject {
 	int		nRemaining;
@@ -138,8 +144,9 @@ struct Enemy : public GameObject {
 	float   fPos;
 	char	originalFace[20];
 
-	Enemy(Screen* screen, const char* face, int pos)
-		: GameObject(screen, face, pos, directionToLeft), nRemaining(0), nMovementInterval(1), fPos(pos)
+	Enemy(GameObject** gameObjects, Screen* screen, const char* face, int pos)
+		: GameObject(gameObjects, screen, face, pos, directionToLeft, "enemy"), 
+		nRemaining(0), nMovementInterval(1), fPos(pos)
 	{
 		strcpy(originalFace, face);
 	}
@@ -164,7 +171,9 @@ struct Enemy : public GameObject {
 struct Bullet : public GameObject {
 	bool	isReady;
 	
-	Bullet(Screen* screen) : GameObject(screen, "-", 0, directionToLeft), isReady{true}
+	Bullet(GameObject** gameObjects, Screen* screen)
+		: GameObject(gameObjects, screen, "-", 0, directionToLeft, "bullet"),
+		isReady{ true }
 	{}
 
 	~Bullet() {}
@@ -196,17 +205,35 @@ struct Bullet : public GameObject {
 		if (isReady == true) return;
 		GameObject::draw();
 	}
-	void update(Player* player, Enemy* enemy, Screen* screen)
+	void update()
 	{
 		if (isReady == true) return;
 
 		move();
-		if (enemy->isHit(this))
-		{ // 적이 총알을 맞았을 때
-			enemy->onHit();
-			player->onEnemyHit();
-			makeReady();
+		GameObject** gameObjects = getGameObjects();
+		Player* player = nullptr;
+		for (int i = 0; i < 83; i++)
+		{
+			GameObject* obj = gameObjects[i];
+			if (obj->equal("player")) {
+				player = (Player*)obj;
+			}
 		}
+
+		for (int i = 0; player != nullptr && i < 83; i++)
+		{
+			GameObject* obj = gameObjects[i];
+			if (obj->equal("enemy")) {
+				Enemy* enemy = (Enemy*)obj;
+				if (enemy->isHit(this))
+				{ // 적이 총알을 맞았을 때
+					enemy->onHit();
+					player->onEnemyHit();
+					makeReady();
+				}
+			}
+		}
+		Screen* screen = getScreen();
 		if (!screen->isInRange(this)) makeReady();
 	}
 	
@@ -221,57 +248,61 @@ bool Screen::isInRange(Bullet* bullet)
 	int bullet_pos = bullet->getPos();
 	return bullet_pos >= 0 && bullet_pos < size;
 }
-Player::Player(Screen* screen, const char* face, int pos)
-	: GameObject(screen, face, pos, directionToRight), nRemaining(0),
-	nBullets(80), bullets{ new Bullet*[nBullets] }
+Player::Player(GameObject** gameObjects, Screen* screen, const char* face, int pos)
+	: GameObject(gameObjects, screen, face, pos, directionToRight, "player"), nRemaining(0)
 {
-	for (int i = 0; i < nBullets; i++)
-	{
-		bullets[i] = new Bullet(screen);
-	}		
-
 	strcpy(originalFace, face);
 }
-Player::~Player()
-{
-	for (int i = 0; i < nBullets; i++)
-		delete bullets[i];
-	delete[] bullets;
-	bullets = nullptr;
-	nBullets = 0;
-}
-void Player::fire(Enemy* enemy)
+void Player::fire()
 {
 	Bullet* bullet = find_unused_bullet();
 	if (bullet == nullptr) return;
+	Enemy* enemy = find_closest_enemy();
+	if (enemy == nullptr) return;
 	bullet->setFire(this, enemy);
 }
 Bullet* Player::find_unused_bullet()
 {
-	for (int i = 0; i < nBullets; i++)
+	GameObject** gameObjects = getGameObjects();
+	for (int i = 0; i < 83; i++)
 	{
-		Bullet* bullet = bullets[i];
+		GameObject* obj = gameObjects[i];
+		if (obj->equal("bullet") == false) continue;
+		Bullet* bullet = (Bullet*)obj;
 		if (bullet->isAvailable() == true) return bullet;
 	}
 	return nullptr;
 }
+Enemy* Player::find_closest_enemy() 
+{
+	GameObject** gameObjects = getGameObjects();
+	Enemy* closest = nullptr;
+	for (int i = 0; i < 83; i++) {
+		GameObject* obj = gameObjects[i];
+		if (obj->equal("enemy") == false) continue;
+		
+		// obj->equal("enemy") == true
+		Enemy* enemy = (Enemy*)obj;
+		if (closest == nullptr) {
+			closest = enemy;
+			continue;
+		}
+		// closest != nullptr
+		int player_pos = getPos();
+		int enemy_pos = enemy->getPos();
+		int closest_pos = closest->getPos();
+		if (abs(player_pos - enemy_pos) < abs(player_pos - closest_pos)) {
+			closest = enemy;
+		}
+	}
+	return closest;
+}
 void Player::draw()
 {
 	GameObject::draw();
-	for (int i = 0; i < nBullets; i++)
-	{
-		Bullet* bullet = bullets[i];
-		bullet->draw();
-	}
 }
 void Player::update()
 {
-	for (int i = 0; i < nBullets; i++)
-	{
-		Bullet* bullet = bullets[i];
-		//bullet->update(this, enemy, screen);
-	}
-
 	if (nRemaining == 0) return;
 	--nRemaining;
 	if (nRemaining == 0) setFace(originalFace);
@@ -289,9 +320,13 @@ int main()
 	int minor;
 
 	Screen  screen(80);
-	Player*	player = new Player( &screen, "(-_-)", 50);
-	Enemy * enemy = new Enemy( &screen, "(`_#)", 10);
-	Enemy*	enemy2 = new Enemy( &screen, "(*_*)", 30);
+	GameObject* gameObjects[80+1+2];
+
+	gameObjects[0] = new Player(gameObjects, &screen, "(-_-)", 50);
+	gameObjects[1] = new Enemy(gameObjects, &screen, "(`_#)", 10);
+	gameObjects[2] = new Enemy(gameObjects, &screen, "(*_*)", 30);
+	for (int i = 0; i < 80; i++)
+		gameObjects[i+3] = new Bullet(gameObjects, &screen);
 
 	// game loop
 
@@ -299,14 +334,37 @@ int main()
 	while (isLooping) {
 		screen.clear();		  		
 
-		player->update();
-		enemy->update();
-		enemy2->update();
+		for (int i = 0; i < 83; i++) {
+			GameObject* obj = gameObjects[i];
+			if (obj->equal("player")) {
+				Player* player = (Player*)obj;
+				player->update();
+			}
+			else if (obj->equal("enemy")) {
+				Enemy* enemy = (Enemy*)obj;
+				enemy->update();
+			}
+			else if (obj->equal("bullet")) {
+				Bullet* bullet = (Bullet*)obj;
+				bullet->update();
+			}
+		}
 
-
-		player->draw();
-		enemy->draw();	
-		enemy2->draw();
+		for (int i = 0; i < 83; i++) {
+			GameObject* obj = gameObjects[i];
+			if (obj->equal("player")) {
+				Player* player = (Player*)obj;
+				player->draw();
+			}
+			else if (obj->equal("enemy")) {
+				Enemy* enemy = (Enemy*)obj;
+				enemy->draw();
+			}
+			else if (obj->equal("bullet")) {
+				Bullet* bullet = (Bullet*)obj;
+				bullet->draw();
+			}
+		}
 		
 		screen.render();
 		Sleep(100);
@@ -320,22 +378,22 @@ int main()
 			break;
 
 		case ' ':
-			player->fire(enemy2);
+			((Player*)gameObjects[0])->fire();
 			break;
 		case 224: // arrow key, function key pressed
 			minor = _getch();
 			switch (minor) {
 			case 75: // left
-				player->move(directionToLeft); // 				
+				gameObjects[0]->move(directionToLeft); // 				
 				break;
 			case 77: // right
-				player->move(directionToRight);
+				gameObjects[0]->move(directionToRight);
 				break;
 			case 72: // up
-				enemy->move(directionToLeft);
+				gameObjects[1]->move(directionToLeft);
 				break;
 			case 80: // down
-				enemy->move(directionToRight);
+				gameObjects[1]->move(directionToRight);
 				break;
 			}
 			break;
@@ -343,9 +401,8 @@ int main()
 	}
 	printf("\nGame Over\n");
 
-	delete enemy2;
-	delete enemy;
-	delete player;
+	for (int i = 0; i < 83; i++)
+		delete gameObjects[i];
 
 	return 0;
 }

@@ -81,7 +81,6 @@ struct GameObject
 	int		pos;
 	int		direction;
 	Screen* screen;
-	char	type[10];
 	GameObject** gameObjects;
 
 	GameObject(GameObject** gameObjects, Screen* screen, const char* face, int pos, int direction, const char* type) 
@@ -147,7 +146,7 @@ struct Enemy : public GameObject {
 	Enemy(GameObject** gameObjects, Screen* screen, const char* face, int pos)
 		: GameObject(gameObjects, screen, face, pos, directionToLeft, "enemy"), 
 		nRemaining(0), nMovementInterval(1), fPos(pos)
-	{
+	{	
 		strcpy(originalFace, face);
 	}
 
@@ -336,16 +335,21 @@ int main()
 
 		for (int i = 0; i < 83; i++) {
 			GameObject* obj = gameObjects[i];
-			if (obj->equal("player")) {
-				Player* player = (Player*)obj;
+
+			Player* player = dynamic_cast<Player *>(obj);
+			if (player != nullptr) {
 				player->update();
+				continue;
 			}
-			else if (obj->equal("enemy")) {
-				Enemy* enemy = (Enemy*)obj;
+			// player == nullptr
+			Enemy* enemy = dynamic_cast<Enemy *>(obj);
+			if (enemy != nullptr) {
 				enemy->update();
+				continue;
 			}
-			else if (obj->equal("bullet")) {
-				Bullet* bullet = (Bullet*)obj;
+			// enemy == nullptr
+			Bullet* bullet = dynamic_cast<Bullet *>(obj);
+			if (bullet != nullptr) {
 				bullet->update();
 			}
 		}
@@ -378,7 +382,7 @@ int main()
 			break;
 
 		case ' ':
-			((Player*)gameObjects[0])->fire();
+			(static_cast<Player *>(gameObjects[0]))->fire();
 			break;
 		case 224: // arrow key, function key pressed
 			minor = _getch();

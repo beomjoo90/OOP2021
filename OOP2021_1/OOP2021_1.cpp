@@ -14,10 +14,10 @@
 const int directionToLeft = 0;
 const int directionToRight = 1;
 
-struct Screen;
-struct Player;
-struct Enemy;
-struct Bullet;
+class Screen;
+class Player;
+class Enemy;
+class Bullet;
 
 
 /*
@@ -42,19 +42,25 @@ struct Bullet;
 		static_cast
 		dynamic_cast
 		reinterpret_cast
+
+   encapsulation : information hiding
 */
 
-struct Screen {
+class Screen {
+private:
 	int		size;
 	char*	canvas;
+
+public:
 
 	// constructor (생성자 함수) 메모리공간상에 적재되는 순간 호출되는
 	Screen(unsigned int size)
 	{
 		if (size == 0) size = 80;
 		this->size = size;
-		canvas = new char[size+1];
+		canvas = new char[size + 1];
 	}
+
 	void clear()
 	{
 		memset(canvas, ' ', size);
@@ -76,20 +82,23 @@ struct Screen {
 	bool isInRange(Bullet* bullet);
 
 	// destructor (소멸자 함수) 메모리공간상에서 없어지는 순간 호출되는 함수
-	~Screen()
+	virtual ~Screen()
 	{
 		delete[] canvas;
 		canvas = nullptr;
 		size = 0;
 	}
 };
-struct GameObject
+class GameObject
 {
+private:
 	char	face[20];
 	int		pos;
 	int		direction;
 	Screen* screen;
 	GameObject** gameObjects;
+
+public:
 
 	GameObject(GameObject** gameObjects, Screen* screen, const char* face, int pos, int direction) 
 		: pos(pos), direction(direction), screen(screen), gameObjects(gameObjects)
@@ -124,14 +133,18 @@ struct GameObject
 	Screen* getScreen() { return screen; }
 	GameObject** getGameObjects() { return gameObjects; }
 };
-struct Player : public GameObject {
+class Player : public GameObject {
+private:
 	int			nRemaining;
 	char*		originalFace;
+
+	Bullet*		find_unused_bullet();
+	Enemy* find_closest_enemy();
+
+public:
 	
 	Player(GameObject** gameObjects, Screen* screen, const char* face, int pos);
 	void fire();
-	Bullet* find_unused_bullet();
-	Enemy* find_closest_enemy();
 	void draw() override;
 	void update() override;
 	void onEnemyHit()
@@ -143,11 +156,14 @@ struct Player : public GameObject {
 		delete[] originalFace;
 	}
 };
-struct Enemy : public GameObject {
+class Enemy : public GameObject {
+private:
 	int		nRemaining;
 	int     nMovementInterval;
 	float   fPos;
 	char	originalFace[20];
+
+public:
 
 	Enemy(GameObject** gameObjects, Screen* screen, const char* face, int pos)
 		: GameObject(gameObjects, screen, face, pos, directionToLeft), 
@@ -173,15 +189,22 @@ struct Enemy : public GameObject {
 		nRemaining = 10;
 	}
 };
-struct Bullet : public GameObject {
+class Bullet : public GameObject {
+private:
 	bool	isReady;
+	void makeReady()
+	{
+		isReady = true;
+	}
+
+public:
 	
 	Bullet(GameObject** gameObjects, Screen* screen)
 		: GameObject(gameObjects, screen, "-", 0, directionToLeft),
 		isReady{ true }
 	{}
 
-	~Bullet() {}
+	~Bullet() override {}
 	void setFire(Player* player, Enemy* enemy)
 	{
 		isReady = false; // inUse
@@ -200,11 +223,6 @@ struct Bullet : public GameObject {
 			setPos( getPos() + (strlen(player_face) - 1));
 	}
 	
-	void makeReady()
-	{
-		isReady = true;
-	}
-
 	void draw() override
 	{
 		if (isReady == true) return;

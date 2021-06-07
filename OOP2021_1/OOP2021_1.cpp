@@ -34,6 +34,14 @@ struct Bullet;
 
    java: class ScannerPrinter extends Printer, implements IScanner
    C#: class ScannerPrinter : Printer, IScanner
+
+
+   polymorphism (다형성)
+	- upcasting
+	- downcasting
+		static_cast
+		dynamic_cast
+		reinterpret_cast
 */
 
 struct Screen {
@@ -83,12 +91,12 @@ struct GameObject
 	Screen* screen;
 	GameObject** gameObjects;
 
-	GameObject(GameObject** gameObjects, Screen* screen, const char* face, int pos, int direction, const char* type) 
+	GameObject(GameObject** gameObjects, Screen* screen, const char* face, int pos, int direction) 
 		: pos(pos), direction(direction), screen(screen), gameObjects(gameObjects)
 	{
 		setFace(face);
-		strcpy(this->type, type);
 	}
+	virtual ~GameObject() {}
 
 	void move(int direction)
 	{
@@ -98,11 +106,11 @@ struct GameObject
 	{
 		(direction == directionToLeft) ? --pos : ++pos;
 	}
-	void draw()
+	virtual void draw()
 	{
 		screen->draw(pos, face);
 	}
-	void update() {}
+	virtual void update() {}
 
 	int getPos() { return pos; } // getter function
 	void setPos(int pos) { this->pos = pos; } // setter function
@@ -113,28 +121,26 @@ struct GameObject
 	const char* getFace() { return face;  }
 	void setFace(const char* face) { strcpy(this->face, face); }
 
-	bool equal(const char* type)
-	{
-		return strcmp(this->type, type) == 0;
-	}
-
 	Screen* getScreen() { return screen; }
 	GameObject** getGameObjects() { return gameObjects; }
 };
 struct Player : public GameObject {
 	int			nRemaining;
-	char		originalFace[20];
+	char*		originalFace;
 	
 	Player(GameObject** gameObjects, Screen* screen, const char* face, int pos);
 	void fire();
 	Bullet* find_unused_bullet();
 	Enemy* find_closest_enemy();
-	void draw();
-	void update();
+	void draw() override;
+	void update() override;
 	void onEnemyHit()
 	{
 		setFace("\\(^_^)/");
 		nRemaining = 30;
+	}
+	~Player() override {
+		delete[] originalFace;
 	}
 };
 struct Enemy : public GameObject {
@@ -144,13 +150,13 @@ struct Enemy : public GameObject {
 	char	originalFace[20];
 
 	Enemy(GameObject** gameObjects, Screen* screen, const char* face, int pos)
-		: GameObject(gameObjects, screen, face, pos, directionToLeft, "enemy"), 
+		: GameObject(gameObjects, screen, face, pos, directionToLeft), 
 		nRemaining(0), nMovementInterval(1), fPos(pos)
 	{	
 		strcpy(originalFace, face);
 	}
 
-	void update()
+	void update() override
 	{
 		int movement = rand() % 3 - 1;
 		fPos += movement * 0.3f;
@@ -171,7 +177,7 @@ struct Bullet : public GameObject {
 	bool	isReady;
 	
 	Bullet(GameObject** gameObjects, Screen* screen)
-		: GameObject(gameObjects, screen, "-", 0, directionToLeft, "bullet"),
+		: GameObject(gameObjects, screen, "-", 0, directionToLeft),
 		isReady{ true }
 	{}
 
@@ -199,39 +205,43 @@ struct Bullet : public GameObject {
 		isReady = true;
 	}
 
-	void draw()
+	void draw() override
 	{
 		if (isReady == true) return;
 		GameObject::draw();
 	}
-	void update()
+	void update() override
 	{
 		if (isReady == true) return;
 
 		move();
 		GameObject** gameObjects = getGameObjects();
+
 		Player* player = nullptr;
 		for (int i = 0; i < 83; i++)
 		{
 			GameObject* obj = gameObjects[i];
-			if (obj->equal("player")) {
-				player = (Player*)obj;
-			}
+			player = dynamic_cast<Player *>(obj);
+			if (player != nullptr)
+				break;
 		}
-
-		for (int i = 0; player != nullptr && i < 83; i++)
+		
+		for (int i = 0; i < 83; i++)
 		{
 			GameObject* obj = gameObjects[i];
-			if (obj->equal("enemy")) {
-				Enemy* enemy = (Enemy*)obj;
-				if (enemy->isHit(this))
-				{ // 적이 총알을 맞았을 때
-					enemy->onHit();
-					player->onEnemyHit();
-					makeReady();
-				}
-			}
+			Enemy* enemy = dynamic_cast<Enemy *>(obj);
+			if (enemy == nullptr) continue;
+			
+			// enemy != nullptr
+			if (enemy->isHit(this) == false) continue;
+
+			enemy->onHit();
+			if (player != nullptr)
+				player->onEnemyHit();
+			makeReady();
+			break;
 		}
+
 		Screen* screen = getScreen();
 		if (!screen->isInRange(this)) makeReady();
 	}
@@ -248,8 +258,9 @@ bool Screen::isInRange(Bullet* bullet)
 	return bullet_pos >= 0 && bullet_pos < size;
 }
 Player::Player(GameObject** gameObjects, Screen* screen, const char* face, int pos)
-	: GameObject(gameObjects, screen, face, pos, directionToRight, "player"), nRemaining(0)
+	: GameObject(gameObjects, screen, face, pos, directionToRight), nRemaining(0)
 {
+	originalFace = new char[20];
 	strcpy(originalFace, face);
 }
 void Player::fire()
@@ -266,9 +277,10 @@ Bullet* Player::find_unused_bullet()
 	for (int i = 0; i < 83; i++)
 	{
 		GameObject* obj = gameObjects[i];
-		if (obj->equal("bullet") == false) continue;
-		Bullet* bullet = (Bullet*)obj;
-		if (bullet->isAvailable() == true) return bullet;
+		Bullet* bullet = dynamic_cast<Bullet *>(obj);
+		if (bullet == nullptr) continue;		
+		if (bullet->isAvailable() == true) 
+			return bullet;
 	}
 	return nullptr;
 }
@@ -278,10 +290,8 @@ Enemy* Player::find_closest_enemy()
 	Enemy* closest = nullptr;
 	for (int i = 0; i < 83; i++) {
 		GameObject* obj = gameObjects[i];
-		if (obj->equal("enemy") == false) continue;
-		
-		// obj->equal("enemy") == true
-		Enemy* enemy = (Enemy*)obj;
+		Enemy* enemy = dynamic_cast<Enemy *>(obj);
+		if (enemy == nullptr) continue;		
 		if (closest == nullptr) {
 			closest = enemy;
 			continue;
@@ -319,7 +329,7 @@ int main()
 	int minor;
 
 	Screen  screen(80);
-	GameObject* gameObjects[80+1+2];
+	GameObject* gameObjects[80+1+2]; // game object pool
 
 	gameObjects[0] = new Player(gameObjects, &screen, "(-_-)", 50);
 	gameObjects[1] = new Enemy(gameObjects, &screen, "(`_#)", 10);
@@ -333,42 +343,9 @@ int main()
 	while (isLooping) {
 		screen.clear();		  		
 
-		for (int i = 0; i < 83; i++) {
-			GameObject* obj = gameObjects[i];
+		for (int i = 0; i < 83; i++) gameObjects[i]->update();
 
-			Player* player = dynamic_cast<Player *>(obj);
-			if (player != nullptr) {
-				player->update();
-				continue;
-			}
-			// player == nullptr
-			Enemy* enemy = dynamic_cast<Enemy *>(obj);
-			if (enemy != nullptr) {
-				enemy->update();
-				continue;
-			}
-			// enemy == nullptr
-			Bullet* bullet = dynamic_cast<Bullet *>(obj);
-			if (bullet != nullptr) {
-				bullet->update();
-			}
-		}
-
-		for (int i = 0; i < 83; i++) {
-			GameObject* obj = gameObjects[i];
-			if (obj->equal("player")) {
-				Player* player = (Player*)obj;
-				player->draw();
-			}
-			else if (obj->equal("enemy")) {
-				Enemy* enemy = (Enemy*)obj;
-				enemy->draw();
-			}
-			else if (obj->equal("bullet")) {
-				Bullet* bullet = (Bullet*)obj;
-				bullet->draw();
-			}
-		}
+		for (int i = 0; i < 83; i++) gameObjects[i]->draw();
 		
 		screen.render();
 		Sleep(100);
@@ -405,8 +382,7 @@ int main()
 	}
 	printf("\nGame Over\n");
 
-	for (int i = 0; i < 83; i++)
-		delete gameObjects[i];
+	for (int i = 0; i < 83; i++) delete gameObjects[i];
 
 	return 0;
 }

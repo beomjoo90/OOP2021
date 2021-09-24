@@ -154,6 +154,19 @@ int main()
 		ErrorExit("GetStdHandle");
 	if (!GetConsoleMode(hStdin, &fdwSaveOldMode))
 		ErrorExit("GetConsoleMode");
+	/*
+		   Step-1:
+		   Disable 'Quick Edit Mode' option programmatically
+	 */
+	fdwMode = ENABLE_EXTENDED_FLAGS;
+	if (!SetConsoleMode(hStdin, fdwMode))
+		ErrorExit("SetConsoleMode");
+	/*
+	   Step-2:
+	   Enable the window and mouse input events,
+	   after you have already applied that 'ENABLE_EXTENDED_FLAGS'
+	   to disable 'Quick Edit Mode'
+	*/
 	fdwMode = ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT;
 	if (!SetConsoleMode(hStdin, fdwMode))
 		ErrorExit("SetConsoleMode");

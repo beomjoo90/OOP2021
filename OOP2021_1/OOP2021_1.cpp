@@ -6,9 +6,10 @@
 #include <conio.h> // console io
 #include <cstring> // string.h
 #include <cstdlib> // stdlib.h
+#include <string>
 #include <string> // c++ string class
 #include <Windows.h>
-#include "Utils.h"0
+#include "Utils.h"
 
 // https://github.com/beomjoo90/OOP2021 , branch: 2학기
 
@@ -51,18 +52,33 @@ public:
 		width = 0; height = 0;
 	}
 
-	int getWidth()
+	int getWidth() const
 	{
 		return width;
 	}
 
-	void clear()
+	void setWidth(int width)
+	{
+		this->width = width;
+	}
+
+	void clear() 
 	{
 		memset(canvas, ' ', size);
 	}
-	void draw(const Position& pos, const char* shape, const Dimension& sz = Position{ 1, 1 } )
+	Position offset2Pos(int offset) const 
 	{
-		int offset = (width + 1) * pos.y + pos.x;
+
+	}
+
+	int pos2Offset(const Position& pos) const 
+	{
+		return (width + 1) * pos.y + pos.x;
+	}
+
+	void draw(const Position& pos, const char* shape, const Dimension& sz = Position{ 1, 1 } ) 
+	{
+		int offset = pos2Offset(pos);
 		for (int h = 0; h < sz.y; h++)
 			strncpy(&canvas[offset + (width + 1) * h], &shape[h * sz.x], sz.x);
 	}
@@ -118,58 +134,64 @@ public:
 	GameObject** getGameObjects() { return gameObjects; }
 };
 
-static HANDLE hStdin;
-static DWORD fdwSaveOldMode;
+class Input {
+	static DWORD cNumRead, fdwMode, i;
+	static INPUT_RECORD irInBuf[128];
+	static int counter;
+	static HANDLE hStdin;
+	static DWORD fdwSaveOldMode;
 
-static char blankChars[80];
+	static char blankChars[80];
 
-static void ErrorExit(const char*);
-static void KeyEventProc(KEY_EVENT_RECORD);
-static void MouseEventProc(MOUSE_EVENT_RECORD);
-static void ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD);
+	static void ErrorExit(const char*);
+	static void KeyEventProc(KEY_EVENT_RECORD);
+	static void MouseEventProc(MOUSE_EVENT_RECORD);
+	static void ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD);
+
+
+public:
+	static void Initialize()
+	{
+		memset(blankChars, ' ', 80);
+		blankChars[79] = '\0';
+
+		hStdin = GetStdHandle(STD_INPUT_HANDLE);
+		if (hStdin == INVALID_HANDLE_VALUE)
+			ErrorExit("GetStdHandle");
+		if (!GetConsoleMode(hStdin, &fdwSaveOldMode))
+			ErrorExit("GetConsoleMode");
+		/*
+			   Step-1:
+			   Disable 'Quick Edit Mode' option programmatically
+		 */
+		fdwMode = ENABLE_EXTENDED_FLAGS;
+		if (!SetConsoleMode(hStdin, fdwMode))
+			ErrorExit("SetConsoleMode");
+		/*
+		   Step-2:
+		   Enable the window and mouse input events,
+		   after you have already applied that 'ENABLE_EXTENDED_FLAGS'
+		   to disable 'Quick Edit Mode'
+		*/
+		fdwMode = ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT;
+		if (!SetConsoleMode(hStdin, fdwMode))
+			ErrorExit("SetConsoleMode");
+
+	}
+	static bool GetKeyDown(const std::string& name);
+
+};
 
 
 int main()
 {	
-	DWORD cNumRead, fdwMode, i;
-	INPUT_RECORD irInBuf[128];
-	int counter = 0;
-	
-	
-	memset(blankChars, ' ', 80);
-	blankChars[79] = '\0';
-
-	// Get the standard inp
-
 	Screen  screen(20, 10);
 	Position pos{ 1, 2 };
 	char shape[] = "**    **     **";
 	Dimension sz{ (int)strlen(shape), 1 };
 
-
-	// Get the standard input handle.
-
-	hStdin = GetStdHandle(STD_INPUT_HANDLE);
-	if (hStdin == INVALID_HANDLE_VALUE)
-		ErrorExit("GetStdHandle");
-	if (!GetConsoleMode(hStdin, &fdwSaveOldMode))
-		ErrorExit("GetConsoleMode");
-	/*
-		   Step-1:
-		   Disable 'Quick Edit Mode' option programmatically
-	 */
-	fdwMode = ENABLE_EXTENDED_FLAGS;
-	if (!SetConsoleMode(hStdin, fdwMode))
-		ErrorExit("SetConsoleMode");
-	/*
-	   Step-2:
-	   Enable the window and mouse input events,
-	   after you have already applied that 'ENABLE_EXTENDED_FLAGS'
-	   to disable 'Quick Edit Mode'
-	*/
-	fdwMode = ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT;
-	if (!SetConsoleMode(hStdin, fdwMode))
-		ErrorExit("SetConsoleMode");
+	// Get the standard inp
+	Input::Initialize();	   	
 
 	bool isLooping = true;
 	while (isLooping) {

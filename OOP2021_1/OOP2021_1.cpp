@@ -13,6 +13,14 @@
 
 // https://github.com/beomjoo90/OOP2021 , branch: 2학기
 
+// singleton 패턴
+// object instance가 단 하나만 존재
+// 1. 생성자 함수에 외부에 숨겨라 -> 생성자 함수를 private 함수로
+// 2. 해당 object instance가 저장될 수 있도록 클래스내에 선언해야 함
+//    static ClassName* instance 선언 그리고 외부에 해당 static 포인터 변수 초기화
+// 3. static ClassName* GetInstance() 를 public으로 선언하고 정의
+
+
 class Screen;
 class GameObject;
 class Input;
@@ -24,11 +32,9 @@ private:
 	int		size;
 	char*	canvas;
 
-public:
-
 	// constructor (생성자 함수) 메모리공간상에 적재되는 순간 호출되는
-	Screen(int width = 10, int height = 10) 
-		: width(width), height(height), canvas( new char[(width+1)*height])
+	Screen(int width = 10, int height = 10)
+		: width(width), height(height), canvas(new char[(width + 1) * height])
 	{
 		bool faultyInput = false;
 		if (this->width <= 0) {
@@ -53,6 +59,18 @@ public:
 		width = 0; height = 0;
 	}
 
+	static Screen* Instance;
+
+
+public:
+
+	static Screen* GetInstance() {
+		if (Instance == nullptr) {
+			Instance = new Screen(20, 10);
+		}
+		return Instance;
+	}
+
 	int getWidth() const
 	{
 		return width;
@@ -67,6 +85,7 @@ public:
 	{
 		memset(canvas, ' ', size);
 	}
+
 	Position offset2Pos(int offset) const 
 	{
 
@@ -95,36 +114,37 @@ public:
 };
 
 class Input {
-	static DWORD cNumRead, fdwMode, i;
-	static INPUT_RECORD irInBuf[128];
-	static int counter;
-	static HANDLE hStdin;
-	static DWORD fdwSaveOldMode;
-	static char blankChars[80];
+	DWORD cNumRead, fdwMode, i;
+	INPUT_RECORD irInBuf[128];
+	int counter;
+	HANDLE hStdin;
+	DWORD fdwSaveOldMode;
+	char blankChars[80];
 
-	static void ErrorExit(const char*);
-	static void KeyEventProc(KEY_EVENT_RECORD);
-	static void MouseEventProc(MOUSE_EVENT_RECORD);
-	static void ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD);
+	void errorExit(const char*);
+	void keyEventProc(KEY_EVENT_RECORD);
+	void mouseEventProc(MOUSE_EVENT_RECORD);
+	void resizeEventProc(WINDOW_BUFFER_SIZE_RECORD);
 
-public:
-	static void Initialize()
+	static Input* Instance;
+
+	Input()
 	{
 		memset(blankChars, ' ', 80);
 		blankChars[79] = '\0';
 
 		hStdin = GetStdHandle(STD_INPUT_HANDLE);
 		if (hStdin == INVALID_HANDLE_VALUE)
-			ErrorExit("GetStdHandle");
+			errorExit("GetStdHandle");
 		if (!GetConsoleMode(hStdin, &fdwSaveOldMode))
-			ErrorExit("GetConsoleMode");
+			errorExit("GetConsoleMode");
 		/*
 			   Step-1:
 			   Disable 'Quick Edit Mode' option programmatically
 		 */
 		fdwMode = ENABLE_EXTENDED_FLAGS;
 		if (!SetConsoleMode(hStdin, fdwMode))
-			ErrorExit("SetConsoleMode");
+			errorExit("SetConsoleMode");
 		/*
 		   Step-2:
 		   Enable the window and mouse input events,
@@ -133,13 +153,25 @@ public:
 		*/
 		fdwMode = ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT;
 		if (!SetConsoleMode(hStdin, fdwMode))
-			ErrorExit("SetConsoleMode");
+			errorExit("SetConsoleMode");
 
 	}
-	static void Deinitialize() {
+
+	~Input() {
 		SetConsoleMode(hStdin, fdwSaveOldMode);
 	}
-	static void ReadInputs() 
+
+public:
+
+	static Input* GetInstance()
+	{
+		if (Instance == nullptr) {
+			Instance = new Input();
+		}
+		return Instance;
+	}
+
+	void readInputs() 
 	{
 		if (!GetNumberOfConsoleInputEvents(hStdin, &cNumRead)) {
 			cNumRead = 0;
@@ -155,7 +187,7 @@ public:
 			irInBuf,     // buffer to read into
 			128,         // size of read buffer
 			&cNumRead)) // number of records read
-			ErrorExit("ReadConsoleInput");
+			errorExit("ReadConsoleInput");
 		// Dispatch the events to the appropriate handler.
 
 #ifdef NOT_COMPILE
@@ -189,17 +221,12 @@ public:
 
 		Borland::gotoxy(0, 0);
 	}
-	static bool GetKeyDown(WORD virtualKeyCode);
-	static bool GetKey(WORD virtualKeyCode);
-	static bool GetKeyUp(WORD virtualKeyCode);
+	bool getKeyDown(WORD virtualKeyCode);
+	bool getKey(WORD virtualKeyCode);
+	bool getKeyUp(WORD virtualKeyCode);
 };
 
-DWORD Input::cNumRead, Input::fdwMode;
-INPUT_RECORD Input::irInBuf[128];
-int Input::counter;
-HANDLE Input::hStdin;
-DWORD Input::fdwSaveOldMode;
-char Input::blankChars[80];
+Input* Input::Instance = nullptr;
 
 
 class GameObject
@@ -209,11 +236,12 @@ private:
 	Position	pos;
 	Dimension	dim;
 	Screen*		screen;
+	Input*		input;
 
 public:
 
-	GameObject(Screen* screen, const char* face, const Position& pos, const Dimension& dim)
-		: pos(pos), screen(screen), dim(dim)
+	GameObject(const char* face, const Position& pos, const Dimension& dim)
+		: pos(pos), screen( Screen::GetInstance() ), dim(dim), input( Input::GetInstance() )
 	{
 		setFace(face);
 	}
@@ -232,11 +260,11 @@ public:
 
 	virtual void update() 
 	{	
-		if (Input::GetKeyUp(VK_LEFT)) {
+		if (input->getKey(VK_LEFT)) {
 			if (pos.x <= 0) return;
 			pos.x = (pos.x - 1) % (screen->getWidth());
 		}
-		if (Input::GetKeyUp(VK_RIGHT)) {
+		if (input->getKey(VK_RIGHT)) {
 			if (pos.x >= (screen->getWidth() - 1)) return;
 			pos.x = (pos.x + 1) % (screen->getWidth());
 		}
@@ -253,37 +281,37 @@ public:
 
 int main()
 {	
-	Screen  screen(20, 10);
+	Screen* screen = Screen::GetInstance();
+	Input*  input = Input::GetInstance();
 	Position pos{ 1, 2 };
 	const char shape[] = "**    **     **";
 	Dimension sz{ (int)strlen(shape), 1 };
-	GameObject one{ &screen, shape, pos,  sz };
-
+	GameObject one{ shape, pos,  sz };
+	
+	
+	
 	// Get the standard inp
-	Input::Initialize();	   	
-
+	
 	bool isLooping = true;
 	while (isLooping) {
 	
-		screen.clear();
+		screen->clear();
 		one.draw();
 
-		Input::ReadInputs();
+		input->readInputs();
 
 		one.update();
 
-		screen.render();
+		screen->render();
 		Sleep(100);
 		
 	}
 	printf("\nGame Over\n");
 
-	Input::Deinitialize();
-
 	return 0;
 }
 
-void Input::ErrorExit(const char* lpszMessage)
+void Input::errorExit(const char* lpszMessage)
 {
 	fprintf(stderr, "%s\n", lpszMessage);
 	
@@ -294,23 +322,13 @@ void Input::ErrorExit(const char* lpszMessage)
 	ExitProcess(0);
 }
 
-bool Input::GetKeyDown(WORD virtualKeyCode)
+bool Input::getKeyDown(WORD virtualKeyCode)
 {
-	if (cNumRead == 0) return false;
-
-	for (int i = 0; i < cNumRead; i++)
-	{
-		if (irInBuf[i].EventType != KEY_EVENT) continue;
-
-		if (irInBuf[i].Event.KeyEvent.wVirtualKeyCode == virtualKeyCode &&
-			irInBuf[i].Event.KeyEvent.bKeyDown == TRUE) {
-			return true;
-		}
-	}
-	return false;
+	// TODO: NOT FULLY IMPLEMENTED YET
+	return getKey(virtualKeyCode); 
 }
 
-bool Input::GetKey(WORD virtualKeyCode)
+bool Input::getKey(WORD virtualKeyCode)
 {
 	if (cNumRead == 0) return false;
 
@@ -326,7 +344,7 @@ bool Input::GetKey(WORD virtualKeyCode)
 	return false;
 }
 
-bool Input::GetKeyUp(WORD virtualKeyCode)
+bool Input::getKeyUp(WORD virtualKeyCode)
 {
 	if (cNumRead == 0) return false;
 
@@ -343,7 +361,7 @@ bool Input::GetKeyUp(WORD virtualKeyCode)
 }
 
 
-void Input::KeyEventProc(KEY_EVENT_RECORD ker)
+void Input::keyEventProc(KEY_EVENT_RECORD ker)
 {
 	Borland::gotoxy(0, 11);
 	printf("%s\r", blankChars);
@@ -373,7 +391,7 @@ void Input::KeyEventProc(KEY_EVENT_RECORD ker)
 	Borland::gotoxy(0, 0);
 }
 
-void Input::MouseEventProc(MOUSE_EVENT_RECORD mer)
+void Input::mouseEventProc(MOUSE_EVENT_RECORD mer)
 {
 	Borland::gotoxy(0, 12);
 	printf("%s\r", blankChars);
@@ -417,7 +435,7 @@ void Input::MouseEventProc(MOUSE_EVENT_RECORD mer)
 	Borland::gotoxy(0, 0);
 }
 
-void Input::ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD wbsr)
+void Input::resizeEventProc(WINDOW_BUFFER_SIZE_RECORD wbsr)
 {
 	Borland::gotoxy(0, 13);
 	printf("%s\r", blankChars);

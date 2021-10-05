@@ -21,6 +21,20 @@
 // 3. static ClassName* GetInstance() 를 public으로 선언하고 정의
 
 
+// Generic Programming: C#, Java
+// Template Programming: C++
+
+template <typename T>
+void print(T input)
+{
+	std::cout << input;
+}
+
+
+
+
+
+
 class Screen;
 class GameObject;
 class Input;
@@ -112,6 +126,9 @@ public:
 	}
 	
 };
+
+Screen* Screen::Instance = nullptr;
+
 
 class Input {
 	DWORD cNumRead, fdwMode, i;
@@ -288,7 +305,9 @@ int main()
 	Dimension sz{ (int)strlen(shape), 1 };
 	GameObject one{ shape, pos,  sz };
 	
-	
+	int a = 30;
+	double f = 30.4;
+	print<double>(f);
 	
 	// Get the standard inp
 	

@@ -8,36 +8,21 @@
 #include <cstdlib> // stdlib.h
 #include <string>
 #include <string> // c++ string class
+#include <vector>
+#include <algorithm>
 #include <Windows.h>
 #include "Utils.h"
 
+using namespace std;
+
 // https://github.com/beomjoo90/OOP2021 , branch: 2학기
-
-// singleton 패턴
-// object instance가 단 하나만 존재
-// 1. 생성자 함수에 외부에 숨겨라 -> 생성자 함수를 private 함수로
-// 2. 해당 object instance가 저장될 수 있도록 클래스내에 선언해야 함
-//    static ClassName* instance 선언 그리고 외부에 해당 static 포인터 변수 초기화
-// 3. static ClassName* GetInstance() 를 public으로 선언하고 정의
-
-
-// Generic Programming: C#, Java
-// Template Programming: C++
-
-template <typename T>
-void print(T input)
-{
-	std::cout << input;
-}
-
-
-
-
-
 
 class Screen;
 class GameObject;
 class Input;
+class Map;
+
+
 
 class Screen {
 private:
@@ -47,16 +32,17 @@ private:
 	char*	canvas;
 
 	// constructor (생성자 함수) 메모리공간상에 적재되는 순간 호출되는
-	Screen(int width = 10, int height = 10)
-		: width(width), height(height), canvas(new char[(width + 1) * height])
+	Screen(int width = 80, int height = 20)
+		: width(width), height(height), 
+		canvas(new char[((size_t)width + 1) * height])
 	{
 		bool faultyInput = false;
 		if (this->width <= 0) {
-			this->width = 10;
+			this->width = 80;
 			faultyInput = true;
 		}
 		if (this->height <= 0) {
-			this->height = 10;
+			this->height = 20;
 			faultyInput = true;
 		}
 		size = (this->width + 1) * this->height;
@@ -68,47 +54,30 @@ private:
 	// destructor (소멸자 함수) 메모리공간상에서 없어지는 순간 호출되는 함수
 	virtual ~Screen()
 	{
-		delete[] canvas;
+		if (canvas != nullptr)
+			delete[] canvas;
 		canvas = nullptr;
 		width = 0; height = 0;
 	}
 
 	static Screen* Instance;
 
-
 public:
 
 	static Screen* GetInstance() {
 		if (Instance == nullptr) {
-			Instance = new Screen(20, 10);
+			Instance = new Screen(40, 21);
 		}
 		return Instance;
 	}
 
-	int getWidth() const
-	{
-		return width;
-	}
+	int getWidth() const { return width; }
 
-	void setWidth(int width)
-	{
-		this->width = width;
-	}
+	void setWidth(int width) { this->width = width; }
 
-	void clear() 
-	{
-		memset(canvas, ' ', size);
-	}
+	void clear() { memset(canvas, ' ', size); }
 
-	Position offset2Pos(int offset) const 
-	{
-
-	}
-
-	int pos2Offset(const Position& pos) const 
-	{
-		return (width + 1) * pos.y + pos.x;
-	}
+	int pos2Offset(const Position& pos) const { return (width + 1) * pos.y + pos.x; }
 
 	void draw(const Position& pos, const char* shape, const Dimension& sz = Position{ 1, 1 } ) 
 	{
@@ -116,6 +85,7 @@ public:
 		for (int h = 0; h < sz.y; h++)
 			strncpy(&canvas[offset + (width + 1) * h], &shape[h * sz.x], sz.x);
 	}
+
 	void render()
 	{
 		Borland::gotoxy(0, 0);
@@ -129,6 +99,18 @@ public:
 
 Screen* Screen::Instance = nullptr;
 
+enum class KeyCode {
+	Space = 0,
+	Left,
+	Right,
+	Up,
+	Down,
+
+	Esc,
+	Enter,
+
+	A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
+};
 
 class Input {
 	DWORD cNumRead, fdwMode, i;
@@ -137,18 +119,24 @@ class Input {
 	HANDLE hStdin;
 	DWORD fdwSaveOldMode;
 	char blankChars[80];
+	WORD virtualKeyCodes[128];
 
-	void errorExit(const char*);
+	bool keys[(int)KeyCode::Z + 1];
+
+	bool mouseClicked;
+	COORD mousePosition;
+	
 	void keyEventProc(KEY_EVENT_RECORD);
 	void mouseEventProc(MOUSE_EVENT_RECORD);
 	void resizeEventProc(WINDOW_BUFFER_SIZE_RECORD);
 
 	static Input* Instance;
+	static std::vector<WORD> KeyCodeTable;
 
-	Input()
+	Input() : keys{ false }
 	{
 		memset(blankChars, ' ', 80);
-		blankChars[79] = '\0';
+		blankChars[79] = '\0';		
 
 		hStdin = GetStdHandle(STD_INPUT_HANDLE);
 		if (hStdin == INVALID_HANDLE_VALUE)
@@ -188,6 +176,8 @@ public:
 		return Instance;
 	}
 
+	void errorExit(const char*);
+
 	void readInputs() 
 	{
 		if (!GetNumberOfConsoleInputEvents(hStdin, &cNumRead)) {
@@ -207,21 +197,21 @@ public:
 			errorExit("ReadConsoleInput");
 		// Dispatch the events to the appropriate handler.
 
-#ifdef NOT_COMPILE
 			for (int i = 0; i < cNumRead; i++)
 			{
 				switch (irInBuf[i].EventType)
 				{
 				case KEY_EVENT: // keyboard input
-					KeyEventProc(irInBuf[i].Event.KeyEvent);
+					keyEventProc(irInBuf[i].Event.KeyEvent);
 					break;
 
 				case MOUSE_EVENT: // mouse input
-					MouseEventProc(irInBuf[i].Event.MouseEvent);
+					mouseEventProc(irInBuf[i].Event.MouseEvent);
+					mousePosition = irInBuf[i].Event.MouseEvent.dwMousePosition;
 					break;
 
 				case WINDOW_BUFFER_SIZE_EVENT: // scrn buf. resizing
-					ResizeEventProc(irInBuf[i].Event.WindowBufferSizeEvent);
+					resizeEventProc(irInBuf[i].Event.WindowBufferSizeEvent);
 					break;
 
 				case FOCUS_EVENT:  // disregard focus events
@@ -230,102 +220,356 @@ public:
 					break;
 
 				default:
-					ErrorExit("Unknown event type");
+					errorExit("Unknown event type");
 					break;
 				}
 			}
-#endif 
 
 		Borland::gotoxy(0, 0);
 	}
 	bool getKeyDown(WORD virtualKeyCode);
 	bool getKey(WORD virtualKeyCode);
 	bool getKeyUp(WORD virtualKeyCode);
+	bool getMouseButtonDown(unsigned short number);
+	Position getMousePosition() const {
+		return { mousePosition.X, mousePosition.Y };
+		// same as return Position{ mousePosition.X, mousePosition.Y }; // it uses temporary object.
+	}
 };
 
 Input* Input::Instance = nullptr;
-
+std::vector<WORD> Input::KeyCodeTable{
+		VK_SPACE, VK_LEFT, VK_RIGHT, VK_UP, VK_DOWN,
+		VK_ESCAPE, VK_RETURN,
+		0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50,
+		0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A
+};
 
 class GameObject
 {
 private:
-	char		face[20];
+	char*		shape;
 	Position	pos;
 	Dimension	dim;
+	int			capacity;
+
+protected:
 	Screen*		screen;
 	Input*		input;
 
 public:
 
 	GameObject(const char* face, const Position& pos, const Dimension& dim)
-		: pos(pos), screen( Screen::GetInstance() ), dim(dim), input( Input::GetInstance() )
+		: pos(pos), dim(dim), capacity((size_t)dim.x* dim.y), 
+		shape{new char[(size_t)dim.x * dim.y]},
+		screen(Screen::GetInstance()), input(Input::GetInstance())
 	{
-		setFace(face);
-	}
-	virtual ~GameObject() {}
-
-	void move(int direction)
-	{
-	}
-	void move()
-	{
-	}
-	virtual void draw() 
-	{
-		screen->draw(pos, face, dim);
+		if (face == nullptr) return;
+		strncpy(shape, face, min(strlen(face), capacity));
 	}
 
-	virtual void update() 
-	{	
-		if (input->getKey(VK_LEFT)) {
-			if (pos.x <= 0) return;
-			pos.x = (pos.x - 1) % (screen->getWidth());
-		}
-		if (input->getKey(VK_RIGHT)) {
-			if (pos.x >= (screen->getWidth() - 1)) return;
-			pos.x = (pos.x + 1) % (screen->getWidth());
-		}
+	virtual ~GameObject() 
+	{
+		if (shape != nullptr)
+			delete[] shape;
+		shape = nullptr;
 	}
 
-	Position getPos() { return pos; } // getter function
+	virtual void move(int pos) {}
+	virtual void move(const Position& offset) {}
+	virtual void move() {}
+
+	virtual void draw() { screen->draw(pos, shape, dim); }
+
+	virtual void update() {}
+
+	Position getPos() const { return pos; } // getter function
 	void setPos(const Position& pos) { this->pos = pos; } // setter function
 
-	const char* getFace() { return face; }
-	void setFace(const char* face) { strcpy(this->face, face); }
+	const char* getShape() const { return shape; }
+	void setShape(const char* face) { strcpy(shape, face); }
+	void setShape(char shape, int pos) 
+	{
+		if (pos < 0 || pos >= capacity) return;
+		this->shape[pos] = shape;
+	}
 
-	Screen* getScreen() { return screen; }
+	Position screen2local(const Position& screenPosition) const {
+		Position pos = getPos();
+		return { screenPosition.x - pos.x, screenPosition.y - pos.y };
+	}
+	Position local2screen(const Position& target) const {
+		Position pos = getPos();
+		return { pos.x + target.x, pos.y + target.y };
+	}
+};
+
+class Map : public GameObject {
+
+	enum class CellState {
+		Closed = 0,
+		Marked,
+		Open,
+	};
+
+	// numberOfNeighboringMines of a Mined cellis assumed to be 9, which has no particular meaning
+	static const int MineCell = 9; 
+
+	static const char Closed = ' ';
+	static const char Marked = '+';
+	static const char Mined = '*';
+	
+
+	const int	width;
+	const int	height;
+	const int	size;	
+
+	int*		numberOfNeighboringMines;
+	CellState*	cellStates;
+
+	int			numberOfTotalMines;
+	bool		bGameOver;
+
+	void initializeCells(int numberOfMines)
+	{	
+		// initialize cell states closed and its shape accordingly
+		for (int cellNo = 0; cellNo < size; cellNo++) {
+			cellStates[cellNo] = CellState::Closed;
+			setShape(Closed, cellNo);
+		}
+
+		srand(time(nullptr));
+
+		memset(numberOfNeighboringMines, 0, sizeof(int) * size);
+		// create the given number of mines from empty cells and assign them appropriately
+		int remainingNumberOfMines = numberOfMines;
+		while (remainingNumberOfMines) { // if there exist any unassigned mine, assign it
+			int loc = rand() % size;
+			if (numberOfNeighboringMines[loc] == 0) { // it is not allocated any mine yet.
+				numberOfNeighboringMines[loc] = MineCell;
+				--remainingNumberOfMines;
+			}
+		} // let no assigned mines left
+
+		// calculate neighboring Cells
+		for (int cellNo = 0; cellNo < size; cellNo++) {
+			int numberOfMines = 0;
+			if (isMine(cellNo)) continue;
+			const int neighbors[] { cellNo - width - 1, cellNo - width, cellNo - width + 1,
+							cellNo - 1, cellNo + 1,
+							cellNo + width - 1, cellNo + width, cellNo + width + 1 };
+			for (auto neighbor : neighbors) {				 
+				if (!isNeighbor(neighbor, cellNo)) continue;
+				if (isMine(neighbor)) ++numberOfMines;
+			}
+			numberOfNeighboringMines[cellNo] = numberOfMines;
+		}
+	}
+
+	int pos2CellNo(const Position& pos) const {
+		return pos.x + pos.y * width;
+	}
+
+	Position cellNo2Pos(int cellNo) const {
+		return Position{ cellNo % width, cellNo / width };
+	}
+
+	bool isMine(int cellNo) const { return numberOfNeighboringMines[cellNo] == MineCell; }
+
+	bool isNeighbor(const Position& candidate, const Position& cellNo) const
+	{
+		if (validatePosition(candidate) == false) return false;
+		if (cellNo.x == 0 && candidate.x == (width - 1)) return false;
+		if (cellNo.x == (width - 1) && candidate.x == 0) return false;
+		return true;
+	}
+		
+	bool isNeighbor(int candidate, int cellNo) const {
+		return isNeighbor(cellNo2Pos(candidate), cellNo2Pos(cellNo));
+	}
+
+	bool validatePosition(int cellNo) const { return cellNo >= 0 && cellNo < size; }
+	
+	bool validatePosition(const Position& pos) const {
+		return pos.x >= 0 && pos.x < width && pos.y >= 0 && pos.y < height;
+	}
+
+	void evaluateGameOver()
+	{
+		// find the number of marked cells
+		int numberOfMarked = 0;
+		for (int cellNo = 0; cellNo < size; cellNo++) {
+			if (cellStates[cellNo] == CellState::Marked) {
+				numberOfMarked++;
+			}
+		}
+		// if the number of marked cells does not match with the number of mines
+		// it will not end yet.
+		if (numberOfMarked != numberOfTotalMines) return;
+
+		// if the marked cells do not matches with the mines, it won't end yet.
+		for (int cellNo = 0; cellNo < size; cellNo++) {
+			if (cellStates[cellNo] == CellState::Marked && isMine(cellNo) == false )
+				return;
+		}
+
+		// if matched, set the flag ready to end the game.
+		for (int cellNo = 0; cellNo < size; cellNo++) {
+			if (cellStates[cellNo] == CellState::Marked) {
+				cellStates[cellNo] = CellState::Open;
+				setShape(Mined, cellNo);
+			}
+		}
+		Borland::gotoxy(local2screen({ 25, 5 }));
+		printf("You Won. Game Over");
+		bGameOver = true;
+	}
+
+	void dig(const int cellNo)
+	{
+		if (validatePosition(cellNo) == false) return;
+		if (cellStates[cellNo] == CellState::Open) return;
+
+		// if you click the cell containing the mine, you will lose.
+		if (isMine(cellNo)) {
+			cellStates[cellNo] = CellState::Open;
+			setShape(Mined, cellNo);
+			Borland::gotoxy(local2screen({ 25, 5 }));
+			printf("You Lost. Game Over");
+			bGameOver = true;
+			return;
+		}
+
+		// open the cell
+		cellStates[cellNo] = CellState::Open;
+		setShape(numberOfNeighboringMines[cellNo] + '0', cellNo);
+
+		// if there are no mine cell nearby, open all neighbors.
+		if (numberOfNeighboringMines[cellNo] != 0) return;
+
+		// open all neighboring cells if there are no neighbor containing the mine.
+		const int neighbors[]{ cellNo - width - 1, cellNo - width, cellNo - width + 1,
+						cellNo - 1, cellNo + 1,
+						cellNo + width - 1, cellNo + width, cellNo + width + 1 };
+		for (auto neighbor : neighbors) {
+			if (!isNeighbor(neighbor, cellNo)) continue;
+			dig(neighbor);
+		}
+
+	}
+	
+public:
+	Map(int numberOfMines = 50, int width = 20, int height = 20) 
+		: width(width), height(height), size(width*height), 
+		numberOfTotalMines(numberOfMines), bGameOver(false),
+		GameObject("", {20, 0}, {width, height}), 
+		numberOfNeighboringMines{ new int[size] }, cellStates{ new CellState[size] }
+	{
+		initializeCells(numberOfMines);
+	}
+
+	~Map() {
+		delete[] numberOfNeighboringMines;
+		numberOfNeighboringMines = nullptr;
+		delete[] cellStates;
+		cellStates = nullptr;
+	}
+	
+	void onMarking(const Position& pos) 
+	{
+		if (validatePosition(pos) == false) return;
+		int cellNo = pos2CellNo(pos);
+		switch (cellStates[cellNo]) {
+		case CellState::Marked:
+			cellStates[cellNo] = CellState::Closed;
+			setShape(Closed, cellNo);
+			break;
+		case CellState::Closed:
+			cellStates[cellNo] = CellState::Marked;
+			setShape(Marked, cellNo);
+			break;
+		}
+	}
+
+	void onClick(const Position& pos) 
+	{
+		if (validatePosition(pos) == false) return;
+
+		int cellNo = pos2CellNo(pos);
+
+		switch (cellStates[cellNo]) {
+		case CellState::Closed:
+		case CellState::Marked:
+			dig(cellNo);
+			break;
+		}
+	}
+
+	void onEvaluation(const Position& pos)
+	{
+		if (validatePosition(pos) == false) return;
+		int cellNo = pos2CellNo(pos);
+		if (cellStates[cellNo] != CellState::Open) return;
+
+		const int neighbors[] {	cellNo - width - 1, cellNo - width, cellNo - width + 1,
+						    cellNo - 1, cellNo + 1,
+							cellNo + width - 1, cellNo + width, cellNo + width + 1 };
+
+		int numberOfMarked = 0;
+		for (auto neighbor : neighbors ) 
+		{
+			if (!isNeighbor(neighbor, cellNo)) continue;
+			if (cellStates[neighbor] == CellState::Closed && isMine(neighbor)) return;
+			if (cellStates[neighbor] == CellState::Marked) numberOfMarked++;
+		}
+		if (numberOfMarked != numberOfNeighboringMines[cellNo]) return;
+
+		for (auto neighbor : neighbors ) 
+		{
+			if (!isNeighbor(neighbor, cellNo)) continue;
+			if (cellStates[neighbor] == CellState::Marked) continue;
+			dig(neighbor);
+		}
+	}
+
+	void update() override 
+	{	
+		if (input->getMouseButtonDown(0)) {
+			onClick(screen2local(input->getMousePosition()));
+		}
+		if (input->getMouseButtonDown(1)) {
+			onMarking(screen2local(input->getMousePosition()));
+		}
+		if (input->getMouseButtonDown(2)) {
+			onEvaluation(screen2local(input->getMousePosition()));
+		}
+		evaluateGameOver();
+	}
+
+	bool isGameOver() const {
+		return bGameOver;
+	}	
 };
 
 int main()
 {	
 	Screen* screen = Screen::GetInstance();
 	Input*  input = Input::GetInstance();
-	Position pos{ 1, 2 };
-	const char shape[] = "**    **     **";
-	Dimension sz{ (int)strlen(shape), 1 };
-	GameObject one{ shape, pos,  sz };
 	
-	int a = 30;
-	double f = 30.4;
-	print<double>(f);
+	Map map;	
 	
 	// Get the standard inp
 	
-	bool isLooping = true;
-	while (isLooping) {
+	while (map.isGameOver() == false) {
 	
 		screen->clear();
-		one.draw();
-
 		input->readInputs();
-
-		one.update();
-
+		map.update();
+		map.draw();
 		screen->render();
+
 		Sleep(100);
-		
 	}
-	printf("\nGame Over\n");
 
 	return 0;
 }
@@ -379,35 +623,53 @@ bool Input::getKeyUp(WORD virtualKeyCode)
 	return false;
 }
 
-
 void Input::keyEventProc(KEY_EVENT_RECORD ker)
 {
 	Borland::gotoxy(0, 11);
 	printf("%s\r", blankChars);
+	if (ker.bKeyDown) {
+		
+	}
 	switch (ker.wVirtualKeyCode) {
+		
 	case VK_LBUTTON:
-		printf("left button ");
 		break;
 	case VK_BACK:
-		printf("back space");
 		break;
 	case VK_RETURN:
-		printf("enter key");
 		break;
 	case VK_LEFT:
-		printf("arrow left");
 		break;
 	case VK_UP:
-		printf("arrow up");
 		break;
 	default:
 		if (ker.wVirtualKeyCode >= 0x30 && ker.wVirtualKeyCode <= 0x39)
-			printf("Key event: %c ", ker.wVirtualKeyCode - 0x30 + '0');
-		else printf("Key event: %c ", ker.wVirtualKeyCode - 0x41 + 'A');
+			printf("Key event: %c %d", ker.wVirtualKeyCode - 0x30 + '0', ker.wRepeatCount);
+		else printf("Key event: %c %d", ker.wVirtualKeyCode - 0x41 + 'A', ker.wRepeatCount);
 		break;
 	}
 	
 	Borland::gotoxy(0, 0);
+}
+
+bool Input::getMouseButtonDown(unsigned short number)
+{
+	for (int i = 0; i < cNumRead; i++) {
+		if (irInBuf[i].EventType != MOUSE_EVENT) continue;
+
+		auto& mouseEvent = irInBuf[i].Event.MouseEvent;
+		if (mouseEvent.dwEventFlags != 0) continue;
+
+		if ( (number == 0 && mouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) ||
+			 (number == 1 && mouseEvent.dwButtonState == RIGHTMOST_BUTTON_PRESSED) ||
+			 (number == 2 && 
+				 (mouseEvent.dwButtonState == (FROM_LEFT_1ST_BUTTON_PRESSED | RIGHTMOST_BUTTON_PRESSED)
+				  || mouseEvent.dwButtonState == FROM_LEFT_2ND_BUTTON_PRESSED) ) ) {
+			mousePosition = mouseEvent.dwMousePosition;
+			return true;
+		}
+	}
+	return false;
 }
 
 void Input::mouseEventProc(MOUSE_EVENT_RECORD mer)
@@ -418,7 +680,7 @@ void Input::mouseEventProc(MOUSE_EVENT_RECORD mer)
 #define MOUSE_HWHEELED 0x0008
 #endif
 	printf("Mouse event: ");
-
+	
 	switch (mer.dwEventFlags)
 	{
 	case 0:
@@ -432,7 +694,7 @@ void Input::mouseEventProc(MOUSE_EVENT_RECORD mer)
 		}
 		else
 		{
-			printf("button press\n");
+			printf("button press %x\n", mer.dwButtonState);
 		}
 		break;
 	case DOUBLE_CLICK:

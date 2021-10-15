@@ -7,7 +7,6 @@
 #include <cstring> // string.h
 #include <cstdlib> // stdlib.h
 #include <string>
-#include <string> // c++ string class
 #include <vector>
 #include <algorithm>
 #include <Windows.h>
@@ -21,7 +20,6 @@ class Screen;
 class GameObject;
 class Input;
 class Map;
-
 
 
 class Screen {
@@ -66,7 +64,7 @@ public:
 
 	static Screen* GetInstance() {
 		if (Instance == nullptr) {
-			Instance = new Screen(40, 21);
+			Instance = new Screen(40, 20);
 		}
 		return Instance;
 	}
@@ -260,7 +258,7 @@ protected:
 public:
 
 	GameObject(const char* face, const Position& pos, const Dimension& dim)
-		: pos(pos), dim(dim), capacity((size_t)dim.x* dim.y), 
+		: pos(pos), dim(dim), capacity((size_t)dim.x* dim.y),
 		shape{new char[(size_t)dim.x * dim.y]},
 		screen(Screen::GetInstance()), input(Input::GetInstance())
 	{
@@ -296,7 +294,7 @@ public:
 
 	Position screen2local(const Position& screenPosition) const {
 		Position pos = getPos();
-		return { screenPosition.x - pos.x, screenPosition.y - pos.y };
+		return Position{ screenPosition.x - pos.x, screenPosition.y - pos.y };
 	}
 	Position local2screen(const Position& target) const {
 		Position pos = getPos();
@@ -355,15 +353,28 @@ class Map : public GameObject {
 		for (int cellNo = 0; cellNo < size; cellNo++) {
 			int numberOfMines = 0;
 			if (isMine(cellNo)) continue;
-			const int neighbors[] { cellNo - width - 1, cellNo - width, cellNo - width + 1,
-							cellNo - 1, cellNo + 1,
-							cellNo + width - 1, cellNo + width, cellNo + width + 1 };
-			for (auto neighbor : neighbors) {				 
-				if (!isNeighbor(neighbor, cellNo)) continue;
-				if (isMine(neighbor)) ++numberOfMines;
+			auto neighbors = getNeighbors(cellNo);
+			for (auto neighbor : neighbors) {
+				if (!isMine(neighbor)) continue;
+				++numberOfMines;
 			}
 			numberOfNeighboringMines[cellNo] = numberOfMines;
 		}
+	}
+
+	vector<int> getNeighbors(int cellNo)
+	{
+		vector<int> neighbors;
+
+		const int candidates[]{ cellNo - width - 1, cellNo - width, cellNo - width + 1,
+							cellNo - 1, cellNo + 1,
+							cellNo + width - 1, cellNo + width, cellNo + width + 1 };
+		for (auto candidate : candidates) {
+			if (!isNeighbor(candidate, cellNo)) continue;
+			auto neighbor = candidate;
+			neighbors.push_back(neighbor);
+		}
+		return neighbors;
 	}
 
 	int pos2CellNo(const Position& pos) const {
@@ -420,8 +431,8 @@ class Map : public GameObject {
 				setShape(Mined, cellNo);
 			}
 		}
-		Borland::gotoxy(local2screen({ 25, 5 }));
-		printf("You Won. Game Over");
+		Borland::gotoxy(local2screen({ width / 2 - (int)strlen("You Won.")/2, height * 2 + 2}));
+		printf("You Won.");
 		bGameOver = true;
 	}
 
@@ -434,8 +445,8 @@ class Map : public GameObject {
 		if (isMine(cellNo)) {
 			cellStates[cellNo] = CellState::Open;
 			setShape(Mined, cellNo);
-			Borland::gotoxy(local2screen({ 25, 5 }));
-			printf("You Lost. Game Over");
+			Borland::gotoxy(local2screen({ width/2 - (int)strlen("You Lost.")/2, height * 2 + 2}));
+			printf("You Lost.");
 			bGameOver = true;
 			return;
 		}
@@ -448,34 +459,13 @@ class Map : public GameObject {
 		if (numberOfNeighboringMines[cellNo] != 0) return;
 
 		// open all neighboring cells if there are no neighbor containing the mine.
-		const int neighbors[]{ cellNo - width - 1, cellNo - width, cellNo - width + 1,
-						cellNo - 1, cellNo + 1,
-						cellNo + width - 1, cellNo + width, cellNo + width + 1 };
+		auto neighbors = getNeighbors(cellNo);
 		for (auto neighbor : neighbors) {
-			if (!isNeighbor(neighbor, cellNo)) continue;
 			dig(neighbor);
 		}
-
-	}
-	
-public:
-	Map(int numberOfMines = 50, int width = 20, int height = 20) 
-		: width(width), height(height), size(width*height), 
-		numberOfTotalMines(numberOfMines), bGameOver(false),
-		GameObject("", {20, 0}, {width, height}), 
-		numberOfNeighboringMines{ new int[size] }, cellStates{ new CellState[size] }
-	{
-		initializeCells(numberOfMines);
 	}
 
-	~Map() {
-		delete[] numberOfNeighboringMines;
-		numberOfNeighboringMines = nullptr;
-		delete[] cellStates;
-		cellStates = nullptr;
-	}
-	
-	void onMarking(const Position& pos) 
+	void onMarking(const Position& pos)
 	{
 		if (validatePosition(pos) == false) return;
 		int cellNo = pos2CellNo(pos);
@@ -491,7 +481,7 @@ public:
 		}
 	}
 
-	void onClick(const Position& pos) 
+	void onClick(const Position& pos)
 	{
 		if (validatePosition(pos) == false) return;
 
@@ -508,29 +498,44 @@ public:
 	void onEvaluation(const Position& pos)
 	{
 		if (validatePosition(pos) == false) return;
-		int cellNo = pos2CellNo(pos);
+		auto cellNo = pos2CellNo(pos);
 		if (cellStates[cellNo] != CellState::Open) return;
 
-		const int neighbors[] {	cellNo - width - 1, cellNo - width, cellNo - width + 1,
-						    cellNo - 1, cellNo + 1,
-							cellNo + width - 1, cellNo + width, cellNo + width + 1 };
+		auto neighbors = getNeighbors(cellNo);
 
 		int numberOfMarked = 0;
-		for (auto neighbor : neighbors ) 
+		for (auto neighbor : neighbors)
 		{
-			if (!isNeighbor(neighbor, cellNo)) continue;
 			if (cellStates[neighbor] == CellState::Closed && isMine(neighbor)) return;
 			if (cellStates[neighbor] == CellState::Marked) numberOfMarked++;
 		}
 		if (numberOfMarked != numberOfNeighboringMines[cellNo]) return;
 
-		for (auto neighbor : neighbors ) 
+		for (auto neighbor : neighbors)
 		{
-			if (!isNeighbor(neighbor, cellNo)) continue;
 			if (cellStates[neighbor] == CellState::Marked) continue;
 			dig(neighbor);
 		}
 	}
+	
+public:
+	Map(int numberOfMines = 10, int width = 10, int height = 10, const Position& pos = { 0, 0 })
+		: width(width), height(height), size(width*height), 
+		numberOfTotalMines(numberOfMines), bGameOver(false),
+		GameObject("", pos, {width, height}), 
+		numberOfNeighboringMines{ new int[size] }, cellStates{ new CellState[size] }
+	{
+		initializeCells(numberOfMines);
+	}
+
+	~Map() {
+		delete[] numberOfNeighboringMines;
+		numberOfNeighboringMines = nullptr;
+		delete[] cellStates;
+		cellStates = nullptr;
+	}
+	
+
 
 	void update() override 
 	{	
@@ -551,24 +556,45 @@ public:
 	}	
 };
 
+
 int main()
 {	
 	Screen* screen = Screen::GetInstance();
 	Input*  input = Input::GetInstance();
 	
-	Map map;	
+	vector<Map*> objs;
+	objs.push_back(new Map{ 10, 10, 10, { 0, 0 }  });
+	Sleep(1000);
+	objs.push_back(new Map{ 10, 10, 10, { 25, 0 } });
 	
 	// Get the standard inp
 	
-	while (map.isGameOver() == false) {
+	while (1) {
+		bool completed = true;
+		for (auto obj : objs) {
+			if (obj->isGameOver() == false) {
+				completed = false;
+				break;
+			}
+		}
+		if (completed == true) break;
 	
 		screen->clear();
 		input->readInputs();
-		map.update();
-		map.draw();
+
+		for (auto obj : objs) obj->update();
+		for (auto obj : objs) obj->draw();
+
 		screen->render();
 
 		Sleep(100);
+	}
+
+	while (objs.size())
+	{
+		auto obj = objs.back();
+		objs.pop_back();
+		delete obj;
 	}
 
 	return 0;

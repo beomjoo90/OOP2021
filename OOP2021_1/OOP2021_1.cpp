@@ -14,6 +14,10 @@
 
 using namespace std;
 
+
+
+
+
 // https://github.com/beomjoo90/OOP2021 , branch: 2학기
 
 class Screen;
@@ -64,7 +68,7 @@ public:
 
 	static Screen* GetInstance() {
 		if (Instance == nullptr) {
-			Instance = new Screen(40, 20);
+			Instance = new Screen(80, 40);
 		}
 		return Instance;
 	}
@@ -254,6 +258,7 @@ private:
 protected:
 	Screen*		screen;
 	Input*		input;
+	vector<GameObject*> children;
 
 public:
 
@@ -262,12 +267,21 @@ public:
 		shape{new char[(size_t)dim.x * dim.y]},
 		screen(Screen::GetInstance()), input(Input::GetInstance())
 	{
-		if (face == nullptr) return;
+		if (face == nullptr || face[0] == '\0') {
+			memset(shape, ' ', sizeof(char)* capacity);
+			return;
+		}
 		strncpy(shape, face, min(strlen(face), capacity));
 	}
 
 	virtual ~GameObject() 
 	{
+		while (children.size() > 0)
+		{
+			auto child = children.back();
+			children.pop_back();
+			delete child;
+		}
 		if (shape != nullptr)
 			delete[] shape;
 		shape = nullptr;
@@ -277,15 +291,26 @@ public:
 	virtual void move(const Position& offset) {}
 	virtual void move() {}
 
-	virtual void draw() { screen->draw(pos, shape, dim); }
+	virtual void draw() { 
+		screen->draw(pos, shape, dim);
+		for (auto child : children) child->draw();
+	}
 
-	virtual void update() {}
+	virtual void update() {
+		for (auto child : children) child->update();
+	}
 
 	Position getPos() const { return pos; } // getter function
 	void setPos(const Position& pos) { this->pos = pos; } // setter function
 
 	const char* getShape() const { return shape; }
-	void setShape(const char* face) { strcpy(shape, face); }
+	void setShape(const char* face) { 
+		if (face == nullptr || face[0] == '\0') {
+			memset(shape, ' ', sizeof(char) * capacity);
+			return;
+		}
+		strncpy(shape, face, max(capacity, strlen(face)) ); 
+	}
 	void setShape(char shape, int pos) 
 	{
 		if (pos < 0 || pos >= capacity) return;
@@ -299,6 +324,18 @@ public:
 	Position local2screen(const Position& target) const {
 		Position pos = getPos();
 		return { pos.x + target.x, pos.y + target.y };
+	}
+};
+
+class Board : public GameObject {
+
+public:
+	Board(const Position& pos, const Dimension& dim)
+		: GameObject("", pos, dim)
+	{}
+
+	void log(const char* msg) {
+		setShape(msg);
 	}
 };
 
@@ -316,7 +353,6 @@ class Map : public GameObject {
 	static const char Closed = ' ';
 	static const char Marked = '+';
 	static const char Mined = '*';
-	
 
 	const int	width;
 	const int	height;
@@ -327,6 +363,8 @@ class Map : public GameObject {
 
 	int			numberOfTotalMines;
 	bool		bGameOver;
+
+	Board*		board;
 
 	void initializeCells(int numberOfMines)
 	{	
@@ -431,8 +469,8 @@ class Map : public GameObject {
 				setShape(Mined, cellNo);
 			}
 		}
-		Borland::gotoxy(local2screen({ width / 2 - (int)strlen("You Won.")/2, height * 2 + 2}));
-		printf("You Won.");
+		if (board) board->log("You Won.");
+		
 		bGameOver = true;
 	}
 
@@ -445,8 +483,9 @@ class Map : public GameObject {
 		if (isMine(cellNo)) {
 			cellStates[cellNo] = CellState::Open;
 			setShape(Mined, cellNo);
-			Borland::gotoxy(local2screen({ width/2 - (int)strlen("You Lost.")/2, height * 2 + 2}));
-			printf("You Lost.");
+			if (board) {
+				board->log("You Lost");
+			}
 			bGameOver = true;
 			return;
 		}
@@ -518,14 +557,18 @@ class Map : public GameObject {
 		}
 	}
 	
+	
 public:
 	Map(int numberOfMines = 10, int width = 10, int height = 10, const Position& pos = { 0, 0 })
 		: width(width), height(height), size(width*height), 
 		numberOfTotalMines(numberOfMines), bGameOver(false),
 		GameObject("", pos, {width, height}), 
-		numberOfNeighboringMines{ new int[size] }, cellStates{ new CellState[size] }
+		numberOfNeighboringMines{ new int[size] }, cellStates{ new CellState[size] },
+		board(new Board({ pos.x, pos.y + height }, { width, 0 }))
 	{
 		initializeCells(numberOfMines);
+		board = new Board({ pos.x, pos.y + height }, { width, 1 });
+		children.push_back(board);
 	}
 
 	~Map() {
@@ -534,8 +577,6 @@ public:
 		delete[] cellStates;
 		cellStates = nullptr;
 	}
-	
-
 
 	void update() override 
 	{	
@@ -549,30 +590,36 @@ public:
 			onEvaluation(screen2local(input->getMousePosition()));
 		}
 		evaluateGameOver();
+		for (auto child : children) child->update();
 	}
 
 	bool isGameOver() const {
 		return bGameOver;
-	}	
+	}
 };
 
 
 int main()
-{	
+{
 	Screen* screen = Screen::GetInstance();
-	Input*  input = Input::GetInstance();
+	Input* input = Input::GetInstance();
+
+	vector<GameObject*> objs;
+	auto map1 = new Map{ 10, 10, 10, { 0, 0 } };
+	auto map2 = new Map{ 10, 10, 10, { 25, 0 } };
 	
-	vector<Map*> objs;
-	objs.push_back(new Map{ 10, 10, 10, { 0, 0 }  });
+	objs.push_back(map1);
 	Sleep(1000);
-	objs.push_back(new Map{ 10, 10, 10, { 25, 0 } });
+	objs.push_back(map2);
 	
 	// Get the standard inp
 	
 	while (1) {
 		bool completed = true;
 		for (auto obj : objs) {
-			if (obj->isGameOver() == false) {
+			auto map = dynamic_cast<Map*>(obj);
+			if (map == nullptr) continue;
+			if (map->isGameOver() == false) {
 				completed = false;
 				break;
 			}

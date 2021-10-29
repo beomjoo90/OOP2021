@@ -4,7 +4,16 @@ struct Position
 	int x;
 	int y;
 
-	Position(int x, int y) : x(x), y(y) {}
+	Position(int x = 0, int y = 0) : x(x), y(y) {}
+	Position(const Position& other) : x(other.x), y(other.y) {} // copy constructor
+
+
+	static Position up;
+	static Position right;
+	static Position down;
+	static Position left;
+	static Position zeros;
+	static Position ones;
 
 };
 

@@ -1,9 +1,11 @@
 #pragma once
 #include <iostream>
 #include <Windows.h>
+#include <string>
 #include <vector>
 #include "Position.h"
 #include "Borland.h"
+#include "Screen.h"
 
 using namespace std;
 
@@ -50,6 +52,13 @@ class Input
 		hStdin = GetStdHandle(STD_INPUT_HANDLE);
 		if (hStdin == INVALID_HANDLE_VALUE)
 			errorExit("GetStdHandle");
+
+		FlushConsoleInputBuffer(hStdin);
+		string mode = "mode con:cols=" + to_string((Screen::GetInstance())->getWidth() + 10);
+		mode += " lines=" + to_string((Screen::GetInstance())->getHeight() + 5);
+		std::system(mode.c_str());
+		std::system("chcp 437");
+
 		if (!GetConsoleMode(hStdin, &fdwSaveOldMode))
 			errorExit("GetConsoleMode");
 		/*

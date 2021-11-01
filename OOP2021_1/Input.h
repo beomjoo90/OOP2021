@@ -52,10 +52,10 @@ class Input
 		hStdin = GetStdHandle(STD_INPUT_HANDLE);
 		if (hStdin == INVALID_HANDLE_VALUE)
 			errorExit("GetStdHandle");
-
 		FlushConsoleInputBuffer(hStdin);
+
 		string mode = "mode con:cols=" + to_string((Screen::GetInstance())->getWidth() + 10);
-		mode += " lines=" + to_string((Screen::GetInstance())->getHeight() + 5);
+		mode += " lines=" + to_string((Screen::GetInstance())->getHeight() + 10);
 		std::system(mode.c_str());
 		std::system("chcp 437");
 
@@ -145,12 +145,10 @@ public:
 
 		Borland::gotoxy(0, 0);
 	}
-	bool getKeyDown(WORD virtualKeyCode);
-	bool getKey(WORD virtualKeyCode);
-	bool getKeyUp(WORD virtualKeyCode);
+	bool getKeyDown(WORD virtualKeyCode) const;
+	bool getKey(WORD virtualKeyCode) const;
+	bool getKeyUp(WORD virtualKeyCode) const;
 	bool getMouseButtonDown(unsigned short number);
-	Position getMousePosition() const {
-		return { mousePosition.X, mousePosition.Y };
-	}
+	Position getMousePosition() const { return { mousePosition.X, mousePosition.Y }; }
 };
 

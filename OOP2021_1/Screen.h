@@ -43,11 +43,13 @@ private:
 
 	static Screen* Instance;
 
+	bool validateRange(int offset) const { return offset >= 0 || offset < size; }
+
 public:
 
 	static Screen* GetInstance() {
 		if (Instance == nullptr) {
-			Instance = new Screen(80, 30);
+			Instance = new Screen(80, 35);
 		}
 		return Instance;
 	}
@@ -57,53 +59,48 @@ public:
 
 	int getHeight() const { return height; }
 
+	int pos2Offset(const Position& pos) const { 
+		if (pos.x < 0 || pos.x > width || pos.y < 0 || pos.y > height) return -1;
+		return (width + 1) * pos.y + pos.x; 
+	}
+
 	void clear() { memset(canvas, ' ', size); }
-
-	int pos2Offset(const Position& pos) const { return (width + 1) * pos.y + pos.x; }
-
-	void draw(const Position& pos, const char* shape, const Dimension& sz)
-	{
+	
+	void draw(const Position& pos, const char* shape, const Dimension& dim) {
 		int offset = pos2Offset(pos);
-		for (int h = 0; h < sz.y; h++)
-			strncpy(&canvas[offset + (width + 1) * h], &shape[h * sz.x], sz.x);
+		if (validateRange(offset) < 0) return;
+		for (int h = 0; h < dim.y; h++)
+			strncpy(&canvas[offset + (width + 1) * h], &shape[h * dim.x], dim.x);
 	}
-	void draw(int x, int y, char shape) { canvas[y * (width + 1) + x] = shape; }
+	void draw(int x, int y, char shape) {
+		int offset = pos2Offset({ x, y });
+		if (validateRange(offset) < 0) return;
+		canvas[offset] = shape;
+	}
 	void draw(const Position& pos, char shape) { draw(pos.x, pos.y, shape); }
-
-	void draw(int x, int y, const char* shape, int len) {
-		draw(Position{ x, y }, shape, Dimension{ len, 1 });
-	}
+	void draw(int x, int y, const char* shape, int len) { draw(Position{ x, y }, shape, Dimension{ len, 1 }); }
 	void draw(const Position& pos, const char* shape) { draw(pos.x, pos.y, shape, strlen(shape)); }
 	void draw(const Position& pos, const char* shape, int len) { draw(pos.x, pos.y, shape, len); }
 	void drawLineHorizontal(const Position& pos, int width) {
 		if (pos.x < 0 || pos.y < 0 || pos.x + width > getWidth() || pos.y > getHeight()) return;
-		for (int i = pos.x; i <= min(this->width, pos.x + width); i++) draw(i, pos.y, 196);
+		for (int i = pos.x; i <= min(this->width, pos.x + width); i++) 
+			draw(i, pos.y, 205);
 	}
 	void drawLineVertical(const Position& pos, int height) {
 		if (pos.x < 0 || pos.y < 0 || pos.x > getWidth() || pos.y + height > getHeight()) return;
 		for (int i = pos.y; i <= min(this->height, pos.y + height); i++) 
-			draw(pos.x, i, 179);
+			draw(pos.x, i, 186);
 	}
-	void drawRectangle(const Position& topLeft, const Position& sz) {
+	void drawRectangle(const Position& topLeft, const Dimension& sz) {
 		drawLineHorizontal(topLeft, sz.x);
-		render();
 		drawLineHorizontal(Position{ topLeft.x, topLeft.y + sz.y }, sz.x);
-		render();
 		drawLineVertical(topLeft, sz.y);
-		render();
 		drawLineVertical(Position{topLeft.x + sz.x, topLeft.y }, sz.y);
-		render();
-		draw(topLeft, 218); draw(Position{ topLeft.x + sz.x, topLeft.y }, 191);
-		render();
-		draw(topLeft.x, topLeft.y + sz.y, 192); 
-		draw(topLeft.x + sz.x, topLeft.y + sz.y, 217);
-		render();
-	}
-	void drawShape(const Position& pos, const Position& sz, const char* shape)
-	{
-		if (shape == nullptr) return;
-		for (int i = 0; i < sz.y; i++) draw(pos.x, pos.y + i, &shape[i * sz.x], sz.x);
-	}
+		draw(topLeft, 201); 
+		draw(Position{ topLeft.x + sz.x, topLeft.y }, 187);
+		draw(topLeft.x, topLeft.y + sz.y, 200); 
+		draw(topLeft.x + sz.x, topLeft.y + sz.y, 188);
+	}	
 
 	void render()
 	{

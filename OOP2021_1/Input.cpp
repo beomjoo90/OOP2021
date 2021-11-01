@@ -9,24 +9,14 @@ std::vector<WORD> Input::KeyCodeTable{
 		0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A
 };
 
-void Input::errorExit(const char* lpszMessage)
-{
-	fprintf(stderr, "%s\n", lpszMessage);
 
-	// Restore input mode on exit.
-
-	SetConsoleMode(hStdin, fdwSaveOldMode);
-
-	ExitProcess(0);
-}
-
-bool Input::getKeyDown(WORD virtualKeyCode)
+bool Input::getKeyDown(WORD virtualKeyCode) const
 {
 	// TODO: NOT FULLY IMPLEMENTED YET
 	return getKey(virtualKeyCode);
 }
 
-bool Input::getKey(WORD virtualKeyCode)
+bool Input::getKey(WORD virtualKeyCode) const
 {
 	if (cNumRead == 0) return false;
 
@@ -42,7 +32,7 @@ bool Input::getKey(WORD virtualKeyCode)
 	return false;
 }
 
-bool Input::getKeyUp(WORD virtualKeyCode)
+bool Input::getKeyUp(WORD virtualKeyCode) const 
 {
 	if (cNumRead == 0) return false;
 
@@ -52,6 +42,26 @@ bool Input::getKeyUp(WORD virtualKeyCode)
 
 		if (irInBuf[i].Event.KeyEvent.wVirtualKeyCode == virtualKeyCode &&
 			irInBuf[i].Event.KeyEvent.bKeyDown == FALSE) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Input::getMouseButtonDown(unsigned short number) 
+{
+	for (int i = 0; i < cNumRead; i++) {
+		if (irInBuf[i].EventType != MOUSE_EVENT) continue;
+
+		auto& mouseEvent = irInBuf[i].Event.MouseEvent;
+		if (mouseEvent.dwEventFlags != 0) continue;
+
+		if ((number == 0 && mouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) ||
+			(number == 1 && mouseEvent.dwButtonState == RIGHTMOST_BUTTON_PRESSED) ||
+			(number == 2 &&
+				(mouseEvent.dwButtonState == (FROM_LEFT_1ST_BUTTON_PRESSED | RIGHTMOST_BUTTON_PRESSED)
+					|| mouseEvent.dwButtonState == FROM_LEFT_2ND_BUTTON_PRESSED))) {
+			mousePosition = mouseEvent.dwMousePosition;
 			return true;
 		}
 	}
@@ -85,26 +95,6 @@ void Input::keyEventProc(KEY_EVENT_RECORD ker)
 	}
 
 	Borland::gotoxy(0, 0);
-}
-
-bool Input::getMouseButtonDown(unsigned short number)
-{
-	for (int i = 0; i < cNumRead; i++) {
-		if (irInBuf[i].EventType != MOUSE_EVENT) continue;
-
-		auto& mouseEvent = irInBuf[i].Event.MouseEvent;
-		if (mouseEvent.dwEventFlags != 0) continue;
-
-		if ((number == 0 && mouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) ||
-			(number == 1 && mouseEvent.dwButtonState == RIGHTMOST_BUTTON_PRESSED) ||
-			(number == 2 &&
-				(mouseEvent.dwButtonState == (FROM_LEFT_1ST_BUTTON_PRESSED | RIGHTMOST_BUTTON_PRESSED)
-					|| mouseEvent.dwButtonState == FROM_LEFT_2ND_BUTTON_PRESSED))) {
-			mousePosition = mouseEvent.dwMousePosition;
-			return true;
-		}
-	}
-	return false;
 }
 
 void Input::mouseEventProc(MOUSE_EVENT_RECORD mer)
@@ -158,4 +148,15 @@ void Input::resizeEventProc(WINDOW_BUFFER_SIZE_RECORD wbsr)
 	printf("Resize event: ");
 	printf("Console screen buffer is %d columns by %d rows.\n", wbsr.dwSize.X, wbsr.dwSize.Y);
 	Borland::gotoxy(0, 0);
+}
+
+void Input::errorExit(const char* lpszMessage)
+{
+	fprintf(stderr, "%s\n", lpszMessage);
+
+	// Restore input mode on exit.
+
+	SetConsoleMode(hStdin, fdwSaveOldMode);
+
+	ExitProcess(0);
 }

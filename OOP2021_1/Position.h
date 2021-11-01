@@ -5,7 +5,7 @@ struct Position
 	int y;
 
 	Position(int x = 0, int y = 0) : x(x), y(y) {}
-	Position(const Position& other) : x(other.x), y(other.y) {} // copy constructor
+	Position(const Position& other) : Position(other.x, other.y) {} // copy constructor
 
 
 	static Position up;

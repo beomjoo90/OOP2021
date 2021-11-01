@@ -152,21 +152,19 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Block.cpp" />
-    <ClCompile Include="Board.cpp" />
     <ClCompile Include="Borland.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="Map.cpp" />
-    <ClCompile Include="OOP2021_1.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="Panel.cpp" />
     <ClCompile Include="Position.cpp" />
     <ClCompile Include="Screen.cpp" />
-    <ClCompile Include="Text.cpp" />
-    <ClCompile Include="TextInput.cpp" />
+    <ClCompile Include="TetrisGame.cpp" />
+    <ClCompile Include="Score.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Block.h" />
-    <ClInclude Include="Board.h" />
     <ClInclude Include="Borland.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="Input.h" />
@@ -174,8 +172,8 @@
     <ClInclude Include="Panel.h" />
     <ClInclude Include="Position.h" />
     <ClInclude Include="Screen.h" />
-    <ClInclude Include="Text.h" />
-    <ClInclude Include="TextInput.h" />
+    <ClInclude Include="TetrisGame.h" />
+    <ClInclude Include="Score.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

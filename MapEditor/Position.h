@@ -12,7 +12,7 @@ struct Position
 
 	Position& operator+=(const Position& other) {
 		this->x += other.x; this->y += other.y;
-		return *this; // chaining
+		return *this;
 	}
 	Position operator+(const Position& other) const { 
 		return Position{ this->x + other.x, this->y + other.y }; 
@@ -20,7 +20,7 @@ struct Position
 	Position operator-(const Position& other) const { 
 		return Position{ this->x - other.x, this->y - other.y }; 
 	}
-	Position operator*(int x) const {  // pos.operator*(2) X 2*pos
+	Position operator*(int x) const { 
 		return Position{ this->x * x, this->y * x }; 
 	}
 

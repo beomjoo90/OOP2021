@@ -1,5 +1,8 @@
 #pragma once
 #include "GameObject.h"
+
+class Screen;
+
 class Panel :
     public GameObject
 {

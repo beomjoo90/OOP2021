@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <fstream>
 #include "Panel.h"
 #include "Score.h"
 
@@ -8,7 +9,30 @@ class Map : public Panel {
 	int			upper;
 	Score*		score;
 
-	static const char rect = '\xdb';
+	static const char rectFill = '\xdb';
+
+	void load() {
+		ifstream mapFile;
+		auto capacity = getCapacity();
+		char* data = new char[capacity];
+		memset(data, '0', sizeof(char) * capacity);
+		mapFile.open("map.txt");
+		memset(map, false, sizeof(bool) * capacity);
+		if (mapFile.is_open() == false) return;
+		
+		if (!mapFile.eof()) mapFile.getline(data, capacity);
+		
+		mapFile.close();
+		upper = getHeight() - 1;
+		for (int i = capacity-1; i >= 0; i--)
+		{
+			if (data[i] == '0') continue;
+			map[i] = true;
+			auto pos = offset2Pos(i);
+			if (pos.y < upper) upper = pos.y;
+		}
+		delete[] data;
+	}
 
 public:
 	Map(const Position& pos, int width, int height, GameObject* parent)
@@ -17,6 +41,7 @@ public:
 	{
 		for (int i = 0; i < width * height; i++) 
 			map[i] = false;
+		load();
 	}
 
 	~Map() { if (map) delete[] map; }
@@ -48,9 +73,8 @@ public:
 		memset(&map[line * width], false, sizeof(bool) * width);
 
 		// copy lines above the "line" down below their below lines.
-		for (int i = line - 1; i >= (upper - 1) && i >= 0; i--) {
-			for (int j = 0; j < width; j++)
-				map[(i + 1) * width + j] = map[i * width + j];
+		for (auto i = line - 1; i >= (upper - 1) && i >= 0; i--) {
+			memcpy(&map[(i + 1) * width], &map[i * width], sizeof(bool) * width);
 		}
 		
 		upper++;
@@ -70,12 +94,12 @@ public:
 		auto width = dim.x;
 		if (pos.y + h >= height) return true;
 
-		int next = pos.y + h;
+		auto next = pos.y + h;		
 		if (next < upper) return false;
-		int capacity = getCapacity();
-		for (int j = 0; j < w; j++) {
-			int i = 0;
-			int last = -1;
+		auto capacity = getCapacity();
+		for (auto j = 0; j < w; j++) {
+			auto i = 0;
+			auto last = -1;
 			for (i = 0; i < h; i++) {
 				if (shape[j + i * w] != ' ') last = i;
 			}
@@ -97,7 +121,7 @@ public:
 			for (int j = 0; j < w; j++) {
 				if (shape[j + i * w] != ' ') {
 					map[pos.x + j + (pos.y + i) * dim.x] = true;
-					setShape(rect, { pos.x + j, pos.y + i });
+					setShape(rectFill, { pos.x + j, pos.y + i });
 				}
 			}
 		}
@@ -106,15 +130,15 @@ public:
 
 	void draw()
 	{
-		Panel::draw();
+		Panel::draw(); // draw border lines
+
 		auto height = dim.y;
 		auto width = dim.x;
-
-		for (int i = upper-2; i < height; i++) {
-			for (int j = 0; j < width; j++) {
-				setShape(map[j + i * width] ? rect : ' ', j + i * width);
+		for (auto i = max(upper-4,0); i < height; i++) {
+			for (auto j = 0; j < width; j++) {
+				setShape(map[j + i * width] ? rectFill : ' ', j + i * width);
 			}
 		}
-		GameObject::draw();
+		GameObject::draw(); // draw shape
 	}
 };

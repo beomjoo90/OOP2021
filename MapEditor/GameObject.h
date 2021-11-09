@@ -35,7 +35,18 @@ protected:
 
 	void setParentWorldPos(const Position& parentWorldPos) { this->parentWorldPos = parentWorldPos; }
 
-	
+	void add(GameObject* child) {
+		if (!child) return;
+		children.push_back(child);
+	}
+
+	void remove(GameObject* child) {
+		if (!child) return;
+		auto it = find(children.begin(), children.end(), child);
+		if (it == children.end()) return;
+		delete *it;
+		children.erase(it);
+	}
 
 public:
 
@@ -83,7 +94,6 @@ public:
 
 	void setParent(GameObject* parent) {
 		this->parent = parent;
-		parent->add(this);
 		setParentWorldPos(parent ? parent->local2Screen() : Position::zeros);
 		for (auto child : children) child->updatePos(true);
 	}
@@ -145,18 +155,6 @@ public:
 
 	void setFreeze(bool paused = true) {
 		this->paused = paused;
-	}
-
-	void add(GameObject* child) {
-		if (!child) return;
-		children.push_back(child);
-	}
-
-	void remove(GameObject* child) {
-		if (!child) return;
-		auto it = find(children.begin(), children.end(), child);
-		if (it == children.end()) return;
-		children.erase(it);
 	}
 };
 

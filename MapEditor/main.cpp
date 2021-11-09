@@ -4,10 +4,8 @@
 
 #include "Position.h"
 #include "Input.h"
-#include "Score.h"
-#include "Block.h"
 #include "Panel.h"
-#include "TetrisGame.h"
+#include "TetrisEditor.h"
 
 using namespace std;
 
@@ -18,7 +16,7 @@ int main()
 {
 	auto screen = Screen::GetInstance();
 	auto input = Input::GetInstance();
-	auto tetris = new TetrisGame;
+	auto tetris = new TetrisEditor;
 
 	while (tetris->isGameOver() == false) 
 	{

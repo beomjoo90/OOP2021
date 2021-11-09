@@ -11,8 +11,6 @@ ostream& operator<<(ostream& o, Position& const pos) {
 	o << "(" << pos.x << "," << pos.y << ")"; return o;
 }
 
-// 
-
 Position operator*(int x, Position pos) { return pos.operator*(x); }
 
 Position operator*(int x, Position& const pos) { return pos.operator*(x); }

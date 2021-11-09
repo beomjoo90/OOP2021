@@ -2,6 +2,11 @@
 
 #include "Map.h"
 
+struct BlockShape {
+	string		shape;
+	Dimension	dim;
+};
+
 class Block :
     public GameObject
 {
@@ -23,6 +28,8 @@ class Block :
 		sz.x = h; sz.y = w;
 		setDimension(sz);
 	}
+
+	
 
 public:
 	Block(const string& shape, const Position& pos, 
@@ -55,23 +62,21 @@ public:
 				}
 			}
 
-			/* reuse the block. */
-			currentX = 4.0f; currentY = 0.0f;
-			speed = 0.1f;
-			setPos(currentX, currentY); // update location from float to integer			
-			//setActive(false);
+			setActive(false);
 			return;
 		}
 
 		if (input->getKey(VK_RIGHT)) {
-			float nextX = currentX + 1;
+			float nextX = currentX + 1.0f;
 			if (map && map->isValidRange({ (int)nextX, (int)currentY }, dim) )
 				currentX = nextX;
+			return;
 		}
 		if (input->getKey(VK_LEFT)) {
-			float nextX = currentX - 1;
+			float nextX = currentX - 1.0f;
 			if (map && map->isValidRange({ (int)nextX, (int)currentY }, dim))
 				currentX = nextX;
+			return;
 		}
 		if (input->getKey(VK_UP)) {
 			rotateShape();
@@ -89,6 +94,7 @@ public:
 						currentY = nextY;
 					}
 				}
+
 				return;
 			}
 		}
@@ -96,6 +102,8 @@ public:
 		if (map && map->isValidRange({ (int)currentX, (int)nextY }, dim)) {
 			currentY = nextY;
 		}
+		Borland::gotoxy(0, 36);
+		printf("dim(%d, %d) (%f, %f)\n", dim.x, dim.y, currentX, currentY);
 	}
 
 	void draw() override
@@ -107,14 +115,32 @@ public:
 		auto pos = getPos();
 		auto width = dim.x;
 		auto height = dim.y;
-		if (!map->isGrounded(shape, pos, width, height))
-			screen->draw( local2Screen(), getShape(), dim);
+		screen->draw(local2Screen(), getShape(), dim);
 	}
 
 	void setMap(Map* map) {
 		this->map = map;
 	}
 
+	void reset() {
+		currentX = 4.0f; currentY = 0.0f;
+		speed = 0.1f;
+		setPos(currentX, currentY);
+	}
+
 	void setInteractable(bool interactable = true) { this->interactable = interactable; }
+
+	static BlockShape chooseShape() {
+		static vector<BlockShape> candidates{
+			{ "\xDB\xDB \xDB \xDB", {2, 3}	},
+			{ "\xDB\xDB\xDB\xDB",	{2, 2}	},
+			{ "\xDB\xDB\xDB\xDB",	{4, 1}	},
+			{ "\xDB\xDB\xDB \xDB ", {2, 3}	},
+			{ " \xDB\xDB\xDB\xDB ", {2, 3}	},
+			{ " \xDB\xDB\xDB \xDB", {2, 3}	},
+			{ "\xDB \xDB\xDB \xDB", {2, 3}  }
+		};
+		return candidates[rand() % candidates.size()];
+	}
 };
 

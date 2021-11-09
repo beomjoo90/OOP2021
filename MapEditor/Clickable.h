@@ -18,13 +18,13 @@ public:
 
     bool isClicked() const { return clicked; }
 
+    void setClicked(bool clicked = true) { this->clicked = clicked; }
+
     void update()
     {
         if (input->getMouseButtonDown(0)) {
             auto pos = screen2Local(input->getMousePosition());
-            if (isInside(pos)) {
-                clicked = true;
-            }
+            if (isInside(pos)) setClicked(true);
         }
     }
 

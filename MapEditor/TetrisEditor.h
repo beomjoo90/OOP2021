@@ -32,12 +32,14 @@ public:
     void update() override {
         if (save->isClicked()) {
             map->save();
+            save->setClicked(false);
         }
         else if (terminate->isClicked()) {
             isCompleted = true;
         }
         else if (load->isClicked()) {
             map->load();
+            load->setClicked(false);
         }
     }
 };

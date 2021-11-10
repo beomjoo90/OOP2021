@@ -69,29 +69,22 @@ public:
                 false
             };
         }
-        if (confirm != nullptr) {
-            if (confirm->isActive() == false) {
-                string result = confirm->getResponse();
-                if (result == "okay")
-                    isCompleted = true;
-                else if (result == "cancel") {
-                    map->setFreeze(false);
-                }
-                remove(confirm);
-                delete confirm;
-                confirm = nullptr;
-            }
+        if (confirm && confirm->isActive() == false) {
+            remove(confirm);
+            delete confirm;
+            confirm = nullptr;
         }
         if (map->isDone()) {
             isCompleted = true;
             return;
         }
-        
-        
         if (input->getKey(VK_ESCAPE)) {
             auto dim = getDimension();
-            confirm = new ConfirmationPanel{ getPos() + Position{ dim.x / 2 - 25/2, dim.y / 2 - 5/2}, 25, 5, this };
-            map->setFreeze();
+            confirm = new ConfirmationPanel{ getPos() + Position{ dim.x / 2 - 25/2, dim.y / 2 - 5/2}, 25, 5, this,
+                [&]() { map->setFreeze(false); }, // if clicked cancel
+                [&]() { isCompleted = true; } // if clicked okay
+            };
+            map->setFreeze(true);
         }
         
     }

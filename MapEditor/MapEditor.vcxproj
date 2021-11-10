@@ -29,7 +29,6 @@
     <ClInclude Include="Position.h" />
     <ClInclude Include="Screen.h" />
     <ClInclude Include="TetrisEditor.h" />
-    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Borland.cpp" />

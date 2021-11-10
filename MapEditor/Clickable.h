@@ -1,9 +1,10 @@
 #pragma once
+#include <functional>
 #include "Panel.h"
 class Clickable :
     public Panel
 {
-    bool clicked;
+    std::function<void(void)> onClick;
 
     bool isInside(const Position& pos) const {
         auto myPos = getPos();
@@ -11,20 +12,18 @@ class Clickable :
     }
 
 public:
-    Clickable(const string& title, const Position& pos, int width, int height, GameObject* parent) 
-        : Panel("", pos, width, height, parent), clicked(false) {
+    Clickable(const string& title, const Position& pos, int width, int height, GameObject* parent, std::function<void()> func = [&](){})
+        : Panel("", pos, width, height, parent), onClick(func) {
         setShape(title.c_str());
     }
-
-    bool isClicked() const { return clicked; }
-
-    void setClicked(bool clicked = true) { this->clicked = clicked; }
 
     void update()
     {
         if (input->getMouseButtonDown(0)) {
             auto pos = screen2Local(input->getMousePosition());
-            if (isInside(pos)) setClicked(true);
+            if (isInside(pos)) {
+                onClick();
+            }
         }
     }
 

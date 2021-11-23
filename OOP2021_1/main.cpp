@@ -20,6 +20,10 @@ int main()
 	auto input = Input::GetInstance();
 	auto tetris = new TetrisGame;
 
+	;
+
+
+
 	while (tetris->isGameOver() == false) 
 	{
 		screen->clear();

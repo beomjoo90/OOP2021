@@ -26,7 +26,7 @@ public:
         save = new Clickable("save", { 20,  10 }, 5, 1, this, [&]() { map->save(); } );
         terminate = new Clickable("exit", { 20, 15 }, 5, 1, this, [&]() { isCompleted = true; } );
         load = new Clickable("load", { 20, 20 }, 5, 1, this, [&]() { map->load(); } );
-    }
+    } 
 
     bool isGameOver() const { return isCompleted; }    
 };

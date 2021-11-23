@@ -51,6 +51,13 @@ public:
     bool isGameOver() const { return isCompleted; }
 
     void update() override {
+        
+        children.erase(
+            std::remove_if(children.begin(), children.end(), 
+                [](auto child) { return child->isActive() == false; }),
+            children.end());
+        
+
         if (currentBlock->isActive() == false) {
             map->remove(currentBlock);
             delete currentBlock;

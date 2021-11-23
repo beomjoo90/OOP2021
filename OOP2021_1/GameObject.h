@@ -8,41 +8,34 @@
 
 using namespace std;
 
+class Transform;
+class Component;
+
 class GameObject
 {
 private:
-	char*				shape;
-	Position			pos;		// "relative" position to its parent game object.
-	
-	int					capacity;	// allocated memory size of "shape"
-	bool				dirty;		// if its pos is updated, it should be marked as dirty
-									// to make sure all the locations of its children game objects
-									// are updated accordingly.
-	Position			parentWorldPos;	// "absolute" position of its parent game object to the screen 
-	bool				active;	// indicator whether it is being served by the update/render logic
-									// if "false", it should not be served by the game engine.
+	string				tag;
+	string				name;
+	Transform*			transform;
 
+	bool				active;	// indicator whether it is being served by the update/render logic
+								// if "false", it should not be served by the game engine.
 	bool				paused;
+	bool				hiden;
 
 protected:
 
-	Screen*				screen;
-	Input*				input;
-
+	GameObject* parent;
 	vector<GameObject*> children;
-	GameObject*			parent;
-	Dimension			dim;
-
-	void setParentWorldPos(const Position& parentWorldPos) { this->parentWorldPos = parentWorldPos; }
-
-	
+	vector<Component*>	components;
 
 public:
 
 	GameObject(const char* face, const Position& pos, const Dimension& dim, GameObject* parent = nullptr)
+		: 
 		: pos(pos), dim(dim), capacity((size_t)dim.x* dim.y),
 		shape{ new char[(size_t)dim.x * dim.y] }, active(true),
-		screen(Screen::GetInstance()), input(Input::GetInstance()), dirty(false), paused(false),
+		dirty(false), paused(false), 
 		parent(parent), parentWorldPos(parent ? parent->local2Screen() : Position::zeros)
 	{
 		if (parent) parent->add(this);

@@ -23,6 +23,11 @@ struct Position
 	Position operator*(int x) const {  // pos.operator*(2) X 2*pos
 		return Position{ this->x * x, this->y * x }; 
 	}
+	Position& operator=(const Position& other) {
+		this->x = other.x;
+		this->y = other.y;
+		return *this;
+	}
 
 	friend ostream& operator<<(ostream& o, Position& const pos);
 	friend Position operator*(int x, Position pos);

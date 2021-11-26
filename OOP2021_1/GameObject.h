@@ -4,24 +4,29 @@
 #include <vector>
 #include <algorithm>
 #include "Screen.h"
+#include "Transform.h"
+#include "Renderer.h"
 #include "Input.h"
 
 using namespace std;
 
-class Transform;
-class Component;
+
 
 class GameObject
 {
 private:
 	string				tag;
 	string				name;
-	Transform*			transform;
+
+	Transform*			transform; // should not be nullptr
+	Renderer*			renderer;  // should not be nullptr
 
 	bool				active;	// indicator whether it is being served by the update/render logic
 								// if "false", it should not be served by the game engine.
 	bool				paused;
-	bool				hiden;
+	bool				hidden;
+
+	friend class Component;
 
 protected:
 
@@ -29,17 +34,21 @@ protected:
 	vector<GameObject*> children;
 	vector<Component*>	components;
 
+	void add(GameObject* child) { children.push_back(child); }
+
 public:
 
-	GameObject(const char* face, const Position& pos, const Dimension& dim, GameObject* parent = nullptr)
-		: 
-		: pos(pos), dim(dim), capacity((size_t)dim.x* dim.y),
-		shape{ new char[(size_t)dim.x * dim.y] }, active(true),
-		dirty(false), paused(false), 
-		parent(parent), parentWorldPos(parent ? parent->local2Screen() : Position::zeros)
+	GameObject(string name = "unknown", string tag = "unknown", 
+		const char* face = nullptr, const Dimension& dim = { 0,0 }, // renderer
+		const Position& pos = Position::zeros, const Position& rot = Position::zeros,  // transform
+		GameObject* parent = nullptr)
+		: transform(new Transform(this, pos, rot)), renderer(new Renderer(this, face, dim)),
+		parent(parent), tag(tag), name(name),
+		active(true), paused(false), hidden(false)
 	{
 		if (parent) parent->add(this);
-		setShape(face);
+		components.push_back(transform);
+		components.push_back(renderer);
 	}
 
 	virtual ~GameObject()
@@ -50,46 +59,43 @@ public:
 			children.pop_back();
 			delete child;
 		}
-		if (shape != nullptr)
-			delete[] shape;
-		shape = nullptr;
+		while (components.size() > 0)
+		{
+			auto component = components.back();
+			components.pop_back();
+			delete component;
+		}
 	}
 
-	virtual void move(const Position& offset) {}
+	Transform* getTransform() const { return transform; }
+
+
+	
 
 	// utility functions
 
-	int pos2Offset(const Position& pos) const { return pos.y * dim.x + pos.x; }
-	Position offset2Pos(int offset) const { return Position{ offset % dim.x, offset / dim.x }; }
-
-	Position getPos() const { return pos; }
-	void setPos(const Position& pos) { this->pos = pos; dirty = true; }
-	void setPos(int x, int y) { setPos(Position{ x, y }); }
+	//int pos2Offset(const Position& pos) const { return pos.y * dim.x + pos.x; }
+	//Position offset2Pos(int offset) const { return Position{ offset % dim.x, offset / dim.x }; }
+		
 
 	virtual bool isActive() const { return active; }
-	void setActive(bool flag = true) { this->active = flag; }
-
-	int getWidth() const { return dim.x; }
-	int getHeight() const { return dim.y; }
-
-	int getCapacity() const { return capacity; }
+	void setActive(bool flag = true) { this->active = flag; }	
 
 	void setParent(GameObject* parent) {
 		this->parent = parent;
-		parent->add(this);
-		setParentWorldPos(parent ? parent->local2Screen() : Position::zeros);
+		if (this->parent) {
+			parent->add(this);
+			transform->setParentWorldPos(parent->transform->local2World());
+		}
+		else {
+			/* TODO */
+			// i don't know how to add root parent's children
+			transform->setParentWorldPos(Position::zeros);
+		}
 		for (auto child : children) child->updatePos(true);
 	}
 
-	Position screen2Local(const Position& screenPos) const {
-		return screenPos - local2Screen();
-	}
-
-	Position local2Screen(const Position& pos ) const {
-		return parentWorldPos + pos;
-	}
-
-	Position local2Screen() const { return local2Screen(getPos()); }
+	
 
 	const Dimension& getDimension() const { return dim; } // why getDimension returns reference value?
 	void setDimension(const Dimension& dim) { this->dim = dim; }	

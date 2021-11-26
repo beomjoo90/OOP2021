@@ -6,7 +6,7 @@
 class Transform :
     public Component
 {
-    Position    position;
+    Position    localPosition;
     Position    rotation;
 
     bool        dirty;          // if its pos is updated, it should be marked as dirty
@@ -16,19 +16,24 @@ class Transform :
 
 public:
     Transform(GameObject* gameObject, const Position& pos = Position::zeros,
-        const Position& rotation = Position::zeros)
-        : Component(gameObject), position(pos), rotation(rotation), dirty(false),
-          parentWorldPos(Position::zeros)
-    {
-        assert(gameObject != nullptr);
-        if (gameObject->parent != nullptr) {
-            setParentWorldPos(gameObject->parent->position);
-        }
+        const Position& rotation = Position::zeros);
+
+    void setParentWorldPos(const Position& parentWorldPos) { this->parentWorldPos = parentWorldPos; }
+
+    Position getPosition() const { return localPosition; }
+
+    Position local2World(const Position& pos) const { return parentWorldPos + pos; }
+    Position local2World() const { return local2World(this->localPosition); }
+    
+    Position world2Local(const Position& screenPos) const {
+        return screenPos - local2World();
     }
 
+    void move(const Position& offset) {}
 
-    void setParentWorldPos(const Position& parentWorldPos) 
-    { this->parentWorldPos = parentWorldPos; }
+    Position getPos() const { return localPosition; }
+    void setPos(const Position& pos) { this->localPosition = pos; dirty = true; }
+    void setPos(int x, int y) { setPos(Position{ x, y }); }
 
 };
 

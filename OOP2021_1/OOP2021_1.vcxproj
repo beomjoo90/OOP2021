@@ -151,9 +151,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Behaviour.cpp" />
     <ClCompile Include="Block.cpp" />
     <ClCompile Include="Borland.cpp" />
     <ClCompile Include="Clickable.cpp" />
+    <ClCompile Include="Component.cpp" />
     <ClCompile Include="ConfirmationPanel.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Input.cpp" />
@@ -161,23 +163,29 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Panel.cpp" />
     <ClCompile Include="Position.cpp" />
+    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Screen.cpp" />
     <ClCompile Include="TetrisGame.cpp" />
     <ClCompile Include="Score.cpp" />
+    <ClCompile Include="Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Behaviour.h" />
     <ClInclude Include="Block.h" />
     <ClInclude Include="Borland.h" />
     <ClInclude Include="Clickable.h" />
+    <ClInclude Include="Component.h" />
     <ClInclude Include="ConfirmationPanel.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Map.h" />
     <ClInclude Include="Panel.h" />
     <ClInclude Include="Position.h" />
+    <ClInclude Include="Renderer.h" />
     <ClInclude Include="Screen.h" />
     <ClInclude Include="TetrisGame.h" />
     <ClInclude Include="Score.h" />
+    <ClInclude Include="Transform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

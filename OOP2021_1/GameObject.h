@@ -28,13 +28,54 @@ private:
 
 	friend class Component;
 
+	void updatePos(bool dirty) {
+		transform->setDirty(dirty || transform->getDirty());
+		if (transform->getDirty() == false) return;
+
+		// it means transform marked as "dirty".
+		if (parent == nullptr) {
+			/* TODO */
+			// i don't know how to add root parent's children
+			transform->setParentWorldPos(Position::zeros);
+		}
+		else {
+			transform->setParentWorldPos(parent->transform->local2World());
+		}
+		for (auto child : children) {
+			child->updatePos(true);
+		}
+		transform->setDirty(false);
+	}
+
+	void internalUpdate() {
+		if (active == false || paused == true) return;
+		update();
+		for (auto child : children) child->internalUpdate();
+	}
+
+	void internalDraw() {
+		if (active == false) return;
+		renderer->draw();
+		for (auto child : children) child->internalDraw();
+	}
+
 protected:
 
 	GameObject* parent;
 	vector<GameObject*> children;
 	vector<Component*>	components;
 
-	void add(GameObject* child) { children.push_back(child); }
+	void add(GameObject* child) { 
+		if (!child) return; 
+		children.push_back(child);
+	}
+
+	void remove(GameObject* child) {
+		if (!child) return;
+		auto it = find(children.begin(), children.end(), child);
+		if (it == children.end()) return;
+		children.erase(it);
+	}
 
 public:
 
@@ -67,95 +108,36 @@ public:
 		}
 	}
 
-	Transform* getTransform() const { return transform; }
-
-
-	
-
 	// utility functions
 
 	//int pos2Offset(const Position& pos) const { return pos.y * dim.x + pos.x; }
 	//Position offset2Pos(int offset) const { return Position{ offset % dim.x, offset / dim.x }; }
-		
 
 	virtual bool isActive() const { return active; }
 	void setActive(bool flag = true) { this->active = flag; }	
 
+	
+	Transform* getTransform() const { return transform; }
 	void setParent(GameObject* parent) {
-		this->parent = parent;
 		if (this->parent) {
+			this->parent->remove(this);
+		}
+		/* TODO */
+		// if previous parent is a root meaning parent is nullptr, 
+		// we need extra treatment on the root node.
+
+		this->parent = parent;
+		if (parent) {
 			parent->add(this);
-			transform->setParentWorldPos(parent->transform->local2World());
 		}
-		else {
-			/* TODO */
-			// i don't know how to add root parent's children
-			transform->setParentWorldPos(Position::zeros);
-		}
-		for (auto child : children) child->updatePos(true);
+		updatePos(true);
 	}
-
+	GameObject* getParent() const { return parent; }
 	
-
-	const Dimension& getDimension() const { return dim; } // why getDimension returns reference value?
-	void setDimension(const Dimension& dim) { this->dim = dim; }	
-	
-	const char* getShape() const { return shape; }
-	void setShape(const char* face) {
-		memset(shape, ' ', sizeof(char) * capacity);
-		if (face == nullptr || face[0] == '\0') {
-			return;
-		}
-		strncpy(shape, face, min(capacity, strlen(face)));
-	}
-	void setShape(char shape, int offset) {
-		if (offset < 0 || offset >= capacity) return;
-		this->shape[offset] = shape;
-	}
-	void setShape(char shape, const Position& pos) { setShape(shape, pos2Offset(pos)); }
-
-	void updatePos(bool dirty = false) {
-		bool inheritedDirty = dirty;
-		if (inheritedDirty == false) {
-			if (this->dirty == true)
-				inheritedDirty = true;
-		} else {
-			setParentWorldPos( parent ? parent->local2Screen() : Position::zeros );
-		}
-
-		for (auto child : children) child->updatePos(inheritedDirty); /* update all children's loc */
-		this->dirty = false; // all its children were updated successfully.
-	}
-
-	void internalDraw() {
-		if (active == false) return;
-		draw();
-		for (auto child : children) child->internalDraw();
-	}
-	virtual void draw() { screen->draw(local2Screen(), shape, dim); }
-	
-	void internalUpdate() {
-		if (active == false || paused == true) return;
-		update();
-		for (auto child : children) child->internalUpdate();
-	}
-	virtual void update() {}
-
+	void update() {}
 
 	void setFreeze(bool paused = true) {
 		this->paused = paused;
-	}
-
-	void add(GameObject* child) {
-		if (!child) return;
-		children.push_back(child);
-	}
-
-	void remove(GameObject* child) {
-		if (!child) return;
-		auto it = find(children.begin(), children.end(), child);
-		if (it == children.end()) return;
-		children.erase(it);
 	}
 };
 

@@ -8,14 +8,14 @@ class GameObject;
 class Transform;
 
 class Component
-{
-	GameObject* gameObject;
+{	
 	string		tag;
-	Transform*	transform;
 
 protected:
 	GameObject* getParent() const { return gameObject->parent; }
 	Transform* getTransform() const { return transform;  }
+	GameObject* gameObject;
+	Transform*	transform;
 	
 public:
 	Component(GameObject* gameObject);

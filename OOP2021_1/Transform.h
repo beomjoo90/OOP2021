@@ -35,5 +35,9 @@ public:
     void setPos(const Position& pos) { this->localPosition = pos; dirty = true; }
     void setPos(int x, int y) { setPos(Position{ x, y }); }
 
+	void setDirty(bool dirty) { this->dirty = dirty; }
+	bool getDirty() const { return dirty; }
+
+	
 };
 

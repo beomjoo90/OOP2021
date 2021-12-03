@@ -47,11 +47,7 @@ private:
 		transform->setDirty(false);
 	}
 
-	void internalUpdate() {
-		if (active == false || paused == true) return;
-		update();
-		for (auto child : children) child->internalUpdate();
-	}
+
 
 	void internalDraw() {
 		if (active == false) return;
@@ -79,18 +75,10 @@ protected:
 
 public:
 
-	GameObject(string name = "unknown", string tag = "unknown", 
+	GameObject(string name = "unknown", string tag = "unknown",
 		const char* face = nullptr, const Dimension& dim = { 0,0 }, // renderer
 		const Position& pos = Position::zeros, const Position& rot = Position::zeros,  // transform
-		GameObject* parent = nullptr)
-		: transform(new Transform(this, pos, rot)), renderer(new Renderer(this, face, dim)),
-		parent(parent), tag(tag), name(name),
-		active(true), paused(false), hidden(false)
-	{
-		if (parent) parent->add(this);
-		components.push_back(transform);
-		components.push_back(renderer);
-	}
+		GameObject* parent = nullptr);
 
 	virtual ~GameObject()
 	{
@@ -139,5 +127,32 @@ public:
 	void setFreeze(bool paused = true) {
 		this->paused = paused;
 	}
+
+	void internalUpdate() {
+		if (active == false || paused == true) return;
+
+		for (auto component : components) component->update();
+		updatePos(transform->getDirty());
+		for (auto child : children) child->internalUpdate();
+	}
+
+	void internalRender();
+
+	template<typename T>
+	void addComponent() {
+		T* newComponent = new T(this);
+		components.push_back(newComponent);
+	}
+
+	template<typename T>
+	T* getComponent() {
+		for (auto component : components) {
+			auto result = dynamic_cast<T*>(component);
+			if (result == nullptr) continue;
+			return result;
+		}
+		return nullptr;
+	}
+	
 };
 

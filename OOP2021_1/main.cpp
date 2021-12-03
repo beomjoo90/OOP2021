@@ -4,10 +4,13 @@
 
 #include "Position.h"
 #include "Input.h"
+#if 0
 #include "Score.h"
 #include "Block.h"
 #include "Panel.h"
+#endif
 #include "TetrisGame.h"
+
 
 using namespace std;
 
@@ -20,19 +23,13 @@ int main()
 	auto input = Input::GetInstance();
 	auto tetris = new TetrisGame;
 
-	;
-
-
-
 	while (tetris->isGameOver() == false) 
 	{
 		screen->clear();
 
 		input->readInputs();
 
-		tetris->internalUpdate();
-		tetris->updatePos(false); // the location of the root game object won't be changed.
-		tetris->internalDraw();
+		tetris->update();
 
 		screen->render();
 

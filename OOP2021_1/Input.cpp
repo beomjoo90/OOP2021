@@ -20,7 +20,7 @@ bool Input::getKey(WORD virtualKeyCode) const
 {
 	if (cNumRead == 0) return false;
 
-	for (int i = 0; i < cNumRead; i++)
+	for (int i = 0; i < (int)cNumRead; i++)
 	{
 		if (irInBuf[i].EventType != KEY_EVENT) continue;
 
@@ -36,7 +36,7 @@ bool Input::getKeyUp(WORD virtualKeyCode) const
 {
 	if (cNumRead == 0) return false;
 
-	for (int i = 0; i < cNumRead; i++)
+	for (int i = 0; i < (int)cNumRead; i++)
 	{
 		if (irInBuf[i].EventType != KEY_EVENT) continue;
 
@@ -50,7 +50,7 @@ bool Input::getKeyUp(WORD virtualKeyCode) const
 
 bool Input::getMouseButtonDown(unsigned short number) 
 {
-	for (int i = 0; i < cNumRead; i++) {
+	for (int i = 0; i < (int)cNumRead; i++) {
 		if (irInBuf[i].EventType != MOUSE_EVENT) continue;
 
 		auto& mouseEvent = irInBuf[i].Event.MouseEvent;

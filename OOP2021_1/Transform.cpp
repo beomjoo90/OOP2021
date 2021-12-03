@@ -3,8 +3,7 @@
 #include "Transform.h"
 #include <assert.h>
 
-Transform::Transform(GameObject* gameObject, const Position& pos = Position::zeros,
-    const Position& rotation = Position::zeros)
+Transform::Transform(GameObject* gameObject, const Position& pos, const Position& rotation)
     : Component(gameObject), localPosition(pos), rotation(rotation), dirty(false),
       parentWorldPos(Position::zeros)
 {

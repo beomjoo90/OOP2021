@@ -115,7 +115,7 @@ public:
 			errorExit("ReadConsoleInput");
 		// Dispatch the events to the appropriate handler.
 
-		for (int i = 0; i < cNumRead; i++)
+		for (int i = 0; i < (int)cNumRead; i++)
 		{
 			switch (irInBuf[i].EventType)
 			{

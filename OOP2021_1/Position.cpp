@@ -7,7 +7,7 @@ Position Position::left{ -1, 0 };
 Position Position::zeros{ 0, 0 };
 Position Position::ones{ 1, 1 };
 
-ostream& operator<<(ostream& o, Position& const pos) { 
+ostream& operator<<(ostream& o, const Position& pos) { 
 	o << "(" << pos.x << "," << pos.y << ")"; return o;
 }
 
@@ -15,4 +15,4 @@ ostream& operator<<(ostream& o, Position& const pos) {
 
 Position operator*(int x, Position pos) { return pos.operator*(x); }
 
-Position operator*(int x, Position& const pos) { return pos.operator*(x); }
+Position operator*(int x, const Position& pos) { return pos.operator*(x); }

@@ -1,23 +1,49 @@
 #pragma once
 
 #include "Position.h"
+#include "GameObject.h"
+#include "MoveScript.h"
+#include "RendererEnabler.h"
+#if 0
 #include "Block.h"
 #include "Score.h"
 #include "Map.h"
 #include "ConfirmationPanel.h"
+#endif
 
-class TetrisGame :
-    public Panel
+class TetrisGame
 {
     bool                isCompleted;
-    Score*              score;  // cache
+    GameObject*         banner;
+
+#if 0
+    Score* score;  // cache
     Map*                map;    // cache
     Panel*              nextPanel;
     Block*              currentBlock;
     Block*              nextBlock;
     ConfirmationPanel*  confirm;
+#endif
+
 
 public:
+
+    TetrisGame() : isCompleted(false), banner(nullptr) {
+        banner = new GameObject("test", "test", "hello world", { (int)strlen("hello world"), 1 });
+
+        auto child = new GameObject("banner child", "test", "I am banners child", { (int)strlen("I am banners child"), 1 }, { 2, 2 }, Position::zeros, banner);
+        banner->addComponent<MoveScript>();
+        child->addComponent<RendererEnabler>();
+    }
+
+    bool isGameOver() const { return isCompleted; }
+
+    void update() {
+        banner->internalUpdate();
+        banner->internalRender();
+    }
+
+#if 0
     TetrisGame() 
         : Panel("", Position{ 1, 1 }, 77, 30, nullptr), 
         isCompleted(false), score(nullptr), nextPanel(nullptr), 
@@ -95,5 +121,6 @@ public:
         }
         
     }
+#endif
 };
 

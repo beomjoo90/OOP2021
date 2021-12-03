@@ -68,38 +68,38 @@ public:
 	
 	void draw(const Position& pos, const char* shape, const Dimension& dim) {
 		int offset = pos2Offset(pos);
-		if (validateRange(offset) < 0) return;
+		if (validateRange(offset) == false) return;
 		for (int h = 0; h < dim.y; h++)
 			strncpy(&canvas[offset + (width + 1) * h], &shape[h * dim.x], dim.x);
 	}
 	void draw(int x, int y, char shape) {
 		int offset = pos2Offset({ x, y });
-		if (validateRange(offset) < 0) return;
+		if (validateRange(offset) == false) return;
 		canvas[offset] = shape;
 	}
-	void draw(const Position& pos, char shape) { draw(pos.x, pos.y, shape); }
+	void draw(const Position& pos, unsigned char shape) { draw(pos.x, pos.y, shape); }
 	void draw(int x, int y, const char* shape, int len) { draw(Position{ x, y }, shape, Dimension{ len, 1 }); }
-	void draw(const Position& pos, const char* shape) { draw(pos.x, pos.y, shape, strlen(shape)); }
+	void draw(const Position& pos, const char* shape) { draw(pos.x, pos.y, shape, (int)strlen(shape)); }
 	void draw(const Position& pos, const char* shape, int len) { draw(pos.x, pos.y, shape, len); }
 	void drawLineHorizontal(const Position& pos, int width) {
 		if (pos.x < 0 || pos.y < 0 || pos.x + width > getWidth() || pos.y > getHeight()) return;
 		for (int i = pos.x; i <= min(this->width, pos.x + width); i++) 
-			draw(i, pos.y, 205);
+			draw(i, pos.y, (unsigned char)205);
 	}
 	void drawLineVertical(const Position& pos, int height) {
 		if (pos.x < 0 || pos.y < 0 || pos.x > getWidth() || pos.y + height > getHeight()) return;
 		for (int i = pos.y; i <= min(this->height, pos.y + height); i++) 
-			draw(pos.x, i, 186);
+			draw(pos.x, i, (unsigned char)186);
 	}
 	void drawRectangle(const Position& topLeft, const Dimension& sz) {
 		drawLineHorizontal(topLeft, sz.x);
 		drawLineHorizontal(Position{ topLeft.x, topLeft.y + sz.y }, sz.x);
 		drawLineVertical(topLeft, sz.y);
 		drawLineVertical(Position{topLeft.x + sz.x, topLeft.y }, sz.y);
-		draw(topLeft, 201); 
+		draw(topLeft, (unsigned char)201); 
 		draw(Position{ topLeft.x + sz.x, topLeft.y }, 187);
-		draw(topLeft.x, topLeft.y + sz.y, 200); 
-		draw(topLeft.x + sz.x, topLeft.y + sz.y, 188);
+		draw(topLeft.x, topLeft.y + sz.y, (unsigned char)200); 
+		draw(topLeft.x + sz.x, topLeft.y + sz.y, (unsigned char)188);
 	}	
 
 	void render()

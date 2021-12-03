@@ -1,6 +1,7 @@
 #pragma once
 #include "Component.h"
 #include "Position.h"
+#include "Input.h"
 #include <assert.h>
 
 class Transform :
@@ -25,9 +26,7 @@ public:
     Position local2World(const Position& pos) const { return parentWorldPos + pos; }
     Position local2World() const { return local2World(this->localPosition); }
     
-    Position world2Local(const Position& screenPos) const {
-        return screenPos - local2World();
-    }
+    Position world2Local(const Position& screenPos) const { return screenPos - local2World(); }
 
     void move(const Position& offset) {}
 
@@ -37,7 +36,5 @@ public:
 
 	void setDirty(bool dirty) { this->dirty = dirty; }
 	bool getDirty() const { return dirty; }
-
-	
 };
 

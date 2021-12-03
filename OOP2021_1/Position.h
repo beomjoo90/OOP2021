@@ -29,9 +29,9 @@ struct Position
 		return *this;
 	}
 
-	friend ostream& operator<<(ostream& o, Position& const pos);
+	friend ostream& operator<<(ostream& o, const Position& pos);
 	friend Position operator*(int x, Position pos);
-	friend Position operator*(int x, Position& const pos);
+	friend Position operator*(int x, const Position& pos);
 
 	static Position up;
 	static Position right;

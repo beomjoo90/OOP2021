@@ -6,14 +6,14 @@ class Renderer :
     public Component
 {
     char*       shape;
-    Dimension	dim;
     int         capacity;
+
+    
+
+protected:
     Transform*  transform;
     Screen*     screen;
-
-
-    int pos2Offset(const Position& pos) const { return pos.y * dim.x + pos.x; }
-    Position offset2Pos(int offset) const { return Position{ offset % dim.x, offset / dim.x }; }
+    Dimension	dim;
 
 public:
     Renderer(GameObject* gameObject, const char* face, const Dimension& dim)
@@ -32,6 +32,9 @@ public:
         if (shape == nullptr) return;
         delete[] shape;
     }
+
+    int pos2Offset(const Position& pos) const { return pos.y * dim.x + pos.x; }
+    Position offset2Pos(int offset) const { return Position{ offset % dim.x, offset / dim.x }; }
 
     int getWidth() const { return dim.x; }
     int getHeight() const { return dim.y; }
@@ -55,9 +58,6 @@ public:
 	}
 	void setShape(char shape, const Position& pos) { setShape(shape, pos2Offset(pos)); }
 
-    virtual void render() {
-        if (enabled == false) return;
-        draw();
-    }
+    virtual void render();
 };
 

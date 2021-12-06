@@ -47,8 +47,6 @@ private:
 		transform->setDirty(false);
 	}
 
-
-
 	void internalDraw() {
 		if (active == false) return;
 		renderer->draw();
@@ -64,13 +62,6 @@ protected:
 	void add(GameObject* child) { 
 		if (!child) return; 
 		children.push_back(child);
-	}
-
-	void remove(GameObject* child) {
-		if (!child) return;
-		auto it = find(children.begin(), children.end(), child);
-		if (it == children.end()) return;
-		children.erase(it);
 	}
 
 public:
@@ -106,6 +97,7 @@ public:
 
 	
 	Transform* getTransform() const { return transform; }
+	Renderer* getRenderer() const { return renderer; }
 	void setParent(GameObject* parent) {
 		if (this->parent) {
 			this->parent->remove(this);
@@ -121,6 +113,9 @@ public:
 		updatePos(true);
 	}
 	GameObject* getParent() const { return parent; }
+
+	const string& getName() const { return name;  }
+	void setName(const string& name) { this->name = name; }
 	
 	void update() {}
 
@@ -134,9 +129,25 @@ public:
 		for (auto component : components) component->update();
 		updatePos(transform->getDirty());
 		for (auto child : children) child->internalUpdate();
+
+	}
+
+	void internalRemove() {
+		for (auto child : children) child->internalRemove();
+		children.erase(
+			std::remove_if(children.begin(), children.end(),
+				[](auto child) { return child->isActive() == false; }),
+			children.end());
 	}
 
 	void internalRender();
+
+	void remove(GameObject* child) {
+		if (!child) return;
+		auto it = find(children.begin(), children.end(), child);
+		if (it == children.end()) return;
+		children.erase(it);
+	}
 
 	template<typename T>
 	void addComponent() {
@@ -152,6 +163,28 @@ public:
 			return result;
 		}
 		return nullptr;
+	}
+
+	template<typename T>
+	T* getOrAddComponent() {
+		auto comp = getComponent<T>();
+		if (comp) return comp;
+		addComponent<T>();
+		return getComponent<T>();
+	}
+
+	template<typename T>
+	void removeComponent() {
+		for (auto it = components.begin(); it != components.end(); )
+		{
+			auto component = *it;
+			if (!dynamic_cast<T*>(component)) {
+				it++;
+				continue;
+			}
+			it = components.erase(it);
+			delete component;
+		}
 	}
 	
 };

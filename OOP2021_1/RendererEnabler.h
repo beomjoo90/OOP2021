@@ -6,7 +6,6 @@
 class RendererEnabler :
     public Behaviour
 {
-    Renderer* renderer;
 public:
     RendererEnabler(GameObject* obj);
 

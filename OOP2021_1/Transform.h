@@ -16,7 +16,8 @@ class Transform :
     Position	parentWorldPos; // "absolute" position of its parent game object to the screen 
 
 public:
-    Transform(GameObject* gameObject, const Position& pos = Position::zeros,
+    Transform(GameObject* gameObject, 
+        const Position& pos = Position::zeros,
         const Position& rotation = Position::zeros);
 
     void setParentWorldPos(const Position& parentWorldPos) { this->parentWorldPos = parentWorldPos; }

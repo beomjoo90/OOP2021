@@ -6,9 +6,7 @@ class MoveScript :
     public Behaviour
 {
 public:
-    MoveScript(GameObject* obj) : Behaviour(obj) {
-        
-    }
+    MoveScript(GameObject* obj) : Behaviour(obj) {}
 
     void update() override {
         auto pos = transform->getPos();

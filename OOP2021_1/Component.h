@@ -15,13 +15,12 @@ class Component
 protected:
 	GameObject*	getParent() const;
 	Transform*	getTransform() const;
+
 	GameObject* gameObject;
 	Transform*	transform;
 	Input*		input;
 
 	bool		enabled;
-
-	
 	
 public:
 	Component(GameObject* gameObject);

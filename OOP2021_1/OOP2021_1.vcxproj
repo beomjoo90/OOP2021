@@ -152,29 +152,37 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Behaviour.cpp" />
+    <ClCompile Include="BlockScript.cpp" />
     <ClCompile Include="Borland.cpp" />
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MapScript.cpp" />
     <ClCompile Include="MoveScript.cpp" />
+    <ClCompile Include="PanelScript.cpp" />
     <ClCompile Include="Position.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RendererEnabler.cpp" />
+    <ClCompile Include="ScoreScript.cpp" />
     <ClCompile Include="Screen.cpp" />
     <ClCompile Include="TetrisGame.cpp" />
     <ClCompile Include="Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Behaviour.h" />
+    <ClInclude Include="BlockScript.h" />
     <ClInclude Include="Borland.h" />
     <ClInclude Include="Component.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="MapScript.h" />
     <ClInclude Include="MoveScript.h" />
+    <ClInclude Include="PanelScript.h" />
     <ClInclude Include="Position.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RendererEnabler.h" />
+    <ClInclude Include="ScoreScript.h" />
     <ClInclude Include="Screen.h" />
     <ClInclude Include="TetrisGame.h" />
     <ClInclude Include="Transform.h" />

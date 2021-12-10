@@ -104,7 +104,7 @@ public:
 		}
 		if (cNumRead == 0) return;
 
-		Borland::gotoxy(0, 14);
+		Borland::Gotoxy(0, 14);
 		printf("number of inputs %d\n", cNumRead);
 
 		if (!ReadConsoleInput(
@@ -143,7 +143,7 @@ public:
 			}
 		}
 
-		Borland::gotoxy(0, 0);
+		Borland::Gotoxy(0, 0);
 	}
 	bool getKeyDown(WORD virtualKeyCode) const;
 	bool getKey(WORD virtualKeyCode) const;

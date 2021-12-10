@@ -29,6 +29,10 @@ struct Position
 		return *this;
 	}
 
+	bool operator==(const Position& other) const { return this->x == other.x && this->y == other.y; }
+
+	bool operator!=(const Position& other) const { return !(*this == other); }
+
 	friend ostream& operator<<(ostream& o, const Position& pos);
 	friend Position operator*(int x, Position pos);
 	friend Position operator*(int x, const Position& pos);

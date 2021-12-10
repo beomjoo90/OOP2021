@@ -9,7 +9,7 @@
 #include "Block.h"
 #include "Panel.h"
 #endif
-#include "TetrisGame.h"
+#include "Scene.h"
 
 
 using namespace std;
@@ -21,22 +21,22 @@ int main()
 {
 	auto screen = Screen::GetInstance();
 	auto input = Input::GetInstance();
-	auto tetris = new TetrisGame;
+	auto scene = new Scene;
 
-	while (tetris->isGameOver() == false) 
+	while (scene->isGameOver() == false) 
 	{
 		screen->clear();
 
 		input->readInputs();
 
-		tetris->update();
+		scene->update();
 
 		screen->render();
 
 		Sleep(100);
 	}
 
-	delete tetris;
+	delete scene;
 
 	return 0;
 }

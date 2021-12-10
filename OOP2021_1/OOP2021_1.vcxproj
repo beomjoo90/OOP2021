@@ -159,14 +159,12 @@
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MapScript.cpp" />
-    <ClCompile Include="MoveScript.cpp" />
-    <ClCompile Include="PanelScript.cpp" />
+    <ClCompile Include="PanelRenderer.cpp" />
     <ClCompile Include="Position.cpp" />
     <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="RendererEnabler.cpp" />
     <ClCompile Include="ScoreScript.cpp" />
     <ClCompile Include="Screen.cpp" />
-    <ClCompile Include="TetrisGame.cpp" />
+    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -177,14 +175,12 @@
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="MapScript.h" />
-    <ClInclude Include="MoveScript.h" />
-    <ClInclude Include="PanelScript.h" />
+    <ClInclude Include="PanelRenderer.h" />
     <ClInclude Include="Position.h" />
     <ClInclude Include="Renderer.h" />
-    <ClInclude Include="RendererEnabler.h" />
     <ClInclude Include="ScoreScript.h" />
     <ClInclude Include="Screen.h" />
-    <ClInclude Include="TetrisGame.h" />
+    <ClInclude Include="Scene.h" />
     <ClInclude Include="Transform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -8,17 +8,16 @@ class Renderer :
     char*       shape;
     int         capacity;
 
-    
-
 protected:
     Transform*  transform;
     Screen*     screen;
     Dimension	dim;
+    Position    worldPos;
 
 public:
     Renderer(GameObject* gameObject, const char* face, const Dimension& dim)
         :   Component(gameObject), transform( getTransform()), shape(nullptr), dim(dim), capacity((size_t)dim.x* dim.y),
-            screen(Screen::GetInstance())
+            screen(Screen::GetInstance()), worldPos(Position::zeros)
     {
         if (capacity == 0) return;
 
@@ -28,6 +27,7 @@ public:
 
         strncpy(shape, face, min(strlen(face), capacity));
     }
+
     virtual ~Renderer() {
         if (shape == nullptr) return;
         delete[] shape;
@@ -58,6 +58,6 @@ public:
 	}
 	void setShape(char shape, const Position& pos) { setShape(shape, pos2Offset(pos)); }
 
-    virtual void render();
+    void render(const Position& parentWorldPos, bool dirty=false);
 };
 

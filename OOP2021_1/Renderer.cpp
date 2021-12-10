@@ -3,16 +3,15 @@
 #include "GameObject.h"
 
 void Renderer::draw() { 
-    auto pos = transform->local2World();
-	if (!shape) return;  screen->draw(transform->local2World(), shape, dim); 
+    if (!shape) return;  screen->draw(worldPos, shape, dim);
 }
 
-void Renderer::render() {
+void Renderer::render(const Position& parentWorldPos, bool dirty) {
     if (enabled == false) return;
-    if (gameObject->getName() == "nextBlock") {
-        Borland::gotoxy(0, 37);
-        std::cout << dim << transform->local2World() << getParent()->getName() ;
-        screen->draw(transform->local2World(), shape, dim);
+    if (dirty == true) worldPos = transform->local2World(parentWorldPos);
+    if (gameObject->getName() == "currentBlock") {
+        Borland::Gotoxy(0, 37);
+        std::cout << dim << worldPos << getParent()->getName() << dirty;
     }
     draw();
 }

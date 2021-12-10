@@ -6,7 +6,7 @@
 class Borland
 {
 public:
-	static void initialize()
+	static void Initialize()
 	{
 		CONSOLE_CURSOR_INFO cci;
 		cci.dwSize = 25;
@@ -15,30 +15,30 @@ public:
 		SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), ENABLE_PROCESSED_INPUT | ENABLE_MOUSE_INPUT);
 	}
 
-	static int wherex()
+	static int Wherex()
 	{
 		CONSOLE_SCREEN_BUFFER_INFO  csbiInfo;
 		GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbiInfo);
 		return csbiInfo.dwCursorPosition.X;
 	}
-	static int wherey()
+	static int Wherey()
 	{
 		CONSOLE_SCREEN_BUFFER_INFO  csbiInfo;
 		GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbiInfo);
 		return csbiInfo.dwCursorPosition.Y;
 	}
-	static void gotoxy(int x, int y)
+	static void Gotoxy(int x, int y)
 	{
 		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), _COORD{ (SHORT)x, (SHORT)y });
 	}
-	static void gotoxy(const Position* pos)
+	static void Gotoxy(const Position* pos)
 	{
 		if (!pos) return;
-		gotoxy((*pos).x, (*pos).y);
+		Gotoxy((*pos).x, (*pos).y);
 	}
-	static void gotoxy(const Position& pos)
+	static void Gotoxy(const Position& pos)
 	{
-		gotoxy(pos.x, pos.y);
+		Gotoxy(pos.x, pos.y);
 	}
 };
 

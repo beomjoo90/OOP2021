@@ -12,6 +12,8 @@ class Component
 {	
 	string		tag;
 
+	friend class GameObject;
+
 protected:
 	GameObject*	getParent() const;
 	Transform*	getTransform() const;
@@ -21,18 +23,22 @@ protected:
 	Input*		input;
 
 	bool		enabled;
+
+	void	destroy(GameObject* obj);
+	void	destroy(Component* component);
+
+	void	setEnabled(bool enabled = true) { enabled = enabled; }
+	bool	getEnabled() const { return enabled; }
 	
 public:
 	Component(GameObject* gameObject);
 
 	virtual ~Component() {}
 
-	friend class GameObject;
+	virtual void start() {}
 
 	virtual void update() {}
 
-	void	setEnabled(bool enabled = true) { this->enabled = enabled; }
-	bool	getEnabled() const { return enabled; }
-
+	
 };
 

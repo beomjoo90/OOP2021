@@ -13,26 +13,21 @@ class Transform :
     bool        dirty;          // if its pos is updated, it should be marked as dirty
 								// to make sure all the locations of its children game objects
 								// are updated accordingly.
-    Position	parentWorldPos; // "absolute" position of its parent game object to the screen 
 
 public:
     Transform(GameObject* gameObject, 
         const Position& pos = Position::zeros,
         const Position& rotation = Position::zeros);
 
-    void setParentWorldPos(const Position& parentWorldPos) { this->parentWorldPos = parentWorldPos; }
-
     Position getPosition() const { return localPosition; }
 
-    Position local2World(const Position& pos) const { return parentWorldPos + pos; }
-    Position local2World() const { return local2World(this->localPosition); }
-    
-    Position world2Local(const Position& screenPos) const { return screenPos - local2World(); }
+    Position local2World(const Position& parentWorldPos, const Position& pos) const { return parentWorldPos + pos; }
+    Position local2World(const Position& parentWorldPos) const { return parentWorldPos + this->localPosition; }
 
     void move(const Position& offset) {}
 
     Position getPos() const { return localPosition; }
-    void setPos(const Position& pos) { this->localPosition = pos; dirty = true; }
+    void setPos(const Position& pos) { dirty = pos != this->localPosition;  this->localPosition = pos; }
     void setPos(int x, int y) { setPos(Position{ x, y }); }
 
 	void setDirty(bool dirty) { this->dirty = dirty; }

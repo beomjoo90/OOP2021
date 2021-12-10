@@ -33,7 +33,7 @@
     <ClCompile Include="Borland.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="TetrisGame.cpp">
+    <ClCompile Include="Scene.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Transform.cpp">
@@ -48,16 +48,10 @@
     <ClCompile Include="Renderer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="MoveScript.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="RendererEnabler.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="BlockScript.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="PanelScript.cpp">
+    <ClCompile Include="PanelRenderer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="MapScript.cpp">
@@ -83,7 +77,7 @@
     <ClInclude Include="Borland.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="TetrisGame.h">
+    <ClInclude Include="Scene.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Transform.h">
@@ -98,16 +92,10 @@
     <ClInclude Include="Component.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="MoveScript.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="RendererEnabler.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="BlockScript.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="PanelScript.h">
+    <ClInclude Include="PanelRenderer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="MapScript.h">

@@ -104,7 +104,7 @@ public:
 
 	void render()
 	{
-		Borland::gotoxy(0, 0);
+		Borland::Gotoxy(0, 0);
 		for (int h = 0; h < height; h++)
 			canvas[(width + 1) * (h + 1) - 1] = '\n';
 		canvas[size - 1] = '\0';

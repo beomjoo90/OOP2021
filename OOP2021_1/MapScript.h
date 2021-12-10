@@ -91,7 +91,6 @@ public:
 	}
 
 	void place(const char* shape, const Position& pos, int w, int h) {
-		auto worldPos = transform->local2World();
 		auto dim = renderer->getDimension();
 		for (int i = 0; i < h; i++) {
 			for (int j = 0; j < w; j++) {

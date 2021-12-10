@@ -4,6 +4,11 @@
 #include "Transform.h"
 #include "MapScript.h"
 
+struct BlockShape {
+	string		shape;
+	Dimension	dim;
+};
+
 class BlockScript :
     public Behaviour
 {
@@ -11,8 +16,9 @@ class BlockScript :
 	float		currentY;
 	float		speed;
 	GameObject*	map;
-	MapScript* mapScript;
+	MapScript*	mapScript;
 	char*		shapeBuffer;
+	
 
 	void rotateShape() {
 		auto originalShape = renderer->getShape();
@@ -32,8 +38,8 @@ public:
 	{
 		auto pos = transform->getPos();
 		auto dim = renderer->getDimension();
-		currentX = pos.x;
-		currentY = pos.y;
+		currentX = (float)pos.x;
+		currentY = (float)pos.y;
 		shapeBuffer = new char[(size_t)dim.x * dim.y];
 		mapScript = map->getComponent<MapScript>();
 	}
@@ -44,11 +50,11 @@ public:
 		}
 	}
 
-	void reset() {
+	void start() override {
 		currentX = 4.0f; currentY = 0.0f;
 		speed = 0.1f;
 		gameObject->setName("currentBlock");
-		transform->setPos(currentX, currentY);
+		transform->setPos((int)currentX, (int)currentY);
 	}
 
 	void update() override {
@@ -66,7 +72,7 @@ public:
 					nCombos++;
 				}
 			}
-			gameObject->setActive(false);
+			destroy(gameObject);
 			return;
 		}
 		if (input->getKey(VK_RIGHT)) {
@@ -88,11 +94,11 @@ public:
 			speed *= 2;
 		}
 		if (input->getKey(VK_SPACE)) {			
-			pos.y = currentY;
+			pos.y = (int)currentY;
 			while (!mapScript->isGrounded(shape, pos, width, height)) {
 				float nextY = currentY + 1;
 				if (mapScript->isValidRange({ (int)currentX, (int)nextY }, dim)) {
-					pos.y = nextY;
+					pos.y = (int)nextY;
 					currentY = nextY;
 				}
 			}
@@ -102,10 +108,23 @@ public:
 		if (mapScript->isValidRange({ (int)currentX, (int)nextY }, dim)) {
 			currentY = nextY;
 		}
-		Borland::gotoxy(0, 36);
+		Borland::Gotoxy(0, 36);
 		printf("dim(%d, %d) (%f, %f)\n", dim.x, dim.y, currentX, currentY);
 
-		transform->setPos(currentX, currentY);
+		transform->setPos( (int)currentX, (int)currentY);
+	}
+
+	static BlockShape ChooseShape() {
+		static vector<BlockShape> candidates{
+			{ "\xDB\xDB \xDB \xDB", {2, 3}	},
+			{ "\xDB\xDB\xDB\xDB",	{2, 2}	},
+			{ "\xDB\xDB\xDB\xDB",	{4, 1}	},
+			{ "\xDB\xDB\xDB \xDB ", {2, 3}	},
+			{ " \xDB\xDB\xDB\xDB ", {2, 3}	},
+			{ " \xDB\xDB\xDB \xDB", {2, 3}	},
+			{ "\xDB \xDB\xDB \xDB", {2, 3}  }
+		};
+		return candidates[rand() % candidates.size()];
 	}
 };
 

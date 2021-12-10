@@ -70,7 +70,7 @@ bool Input::getMouseButtonDown(unsigned short number)
 
 void Input::keyEventProc(KEY_EVENT_RECORD ker)
 {
-	Borland::gotoxy(0, 11);
+	Borland::Gotoxy(0, 11);
 	printf("%s\r", blankChars);
 	if (ker.bKeyDown) {
 
@@ -94,12 +94,12 @@ void Input::keyEventProc(KEY_EVENT_RECORD ker)
 		break;
 	}
 
-	Borland::gotoxy(0, 0);
+	Borland::Gotoxy(0, 0);
 }
 
 void Input::mouseEventProc(MOUSE_EVENT_RECORD mer)
 {
-	Borland::gotoxy(0, 12);
+	Borland::Gotoxy(0, 12);
 	printf("%s\r", blankChars);
 #ifndef MOUSE_HWHEELED
 #define MOUSE_HWHEELED 0x0008
@@ -138,16 +138,16 @@ void Input::mouseEventProc(MOUSE_EVENT_RECORD mer)
 		printf("unknown\n");
 		break;
 	}
-	Borland::gotoxy(0, 0);
+	Borland::Gotoxy(0, 0);
 }
 
 void Input::resizeEventProc(WINDOW_BUFFER_SIZE_RECORD wbsr)
 {
-	Borland::gotoxy(0, 13);
+	Borland::Gotoxy(0, 13);
 	printf("%s\r", blankChars);
 	printf("Resize event: ");
 	printf("Console screen buffer is %d columns by %d rows.\n", wbsr.dwSize.X, wbsr.dwSize.Y);
-	Borland::gotoxy(0, 0);
+	Borland::Gotoxy(0, 0);
 }
 
 void Input::errorExit(const char* lpszMessage)

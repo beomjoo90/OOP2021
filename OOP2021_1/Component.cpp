@@ -9,3 +9,12 @@ Component::Component(GameObject* gameObject)
 
 GameObject* Component::getParent() const { return gameObject->parent; }
 Transform*	Component::getTransform() const { return transform; }
+
+void	Component::destroy(GameObject* obj) {
+	if (!obj) return;
+	obj->destroy();
+}
+
+void	Component::destroy(Component* component) {
+	gameObject->removeComponent(component);
+}
